@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-night-page text-zinc-300 font-body antialiased;
+  /* Faint tactical grid overlay */
+  background-image:
+    linear-gradient(rgba(113, 224, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(113, 224, 0, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+@layer components {
+  .card {
+    @apply border border-night-700 bg-night-900 transition-all duration-300 hover:border-ember-600/70 hover:shadow-glowSm hover:-translate-y-0.5;
+  }
+
+  .btn-primary {
+    @apply relative overflow-hidden inline-flex items-center justify-center gap-2 bg-ember-600 px-6 py-2.5
+      font-mono text-sm font-bold uppercase tracking-[0.1em] text-ember-900 transition-all duration-300
+      hover:bg-ember-400 hover:shadow-glowLg hover:scale-[1.02] active:scale-[0.98]
+      disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  /* Shimmer line effect on primary buttons */
+  .btn-primary::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent;
+    animation: sheen 3.5s ease-in-out infinite;
+  }
+
+  .btn-ghost {
+    @apply relative overflow-hidden inline-flex items-center justify-center gap-2 border border-night-700 px-6 py-2.5
+      font-mono text-sm font-medium uppercase tracking-[0.1em] text-zinc-300 transition-all duration-300
+      hover:border-ember-600 hover:text-ember-400 hover:bg-ember-600/10 hover:shadow-glowSm hover:scale-[1.02] active:scale-[0.98]
+      disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .input {
+    @apply w-full border border-night-700 border-b-2 bg-[#101511] px-3.5 py-2.5
+      font-mono text-sm text-zinc-100 placeholder:text-zinc-500 placeholder:uppercase
+      transition-colors duration-200
+      focus:border-b-ember-600 focus:border-ember-600/60 focus:outline-none;
+  }
+
+  .label {
+    @apply mb-1.5 block font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-ember-400;
+  }
+
+  .section-title {
+    @apply font-display text-3xl md:text-4xl font-bold uppercase tracking-tight text-white;
+  }
+
+  .hud-note {
+    @apply font-mono text-[10px] uppercase tracking-[0.1em] text-ember-600/50;
+  }
+
+  .tab-btn {
+    @apply border border-night-700 px-4 py-2 font-mono text-xs font-medium uppercase
+      tracking-[0.1em] text-zinc-300 transition-all duration-200 hover:text-white hover:border-zinc-500 active:scale-95;
+  }
+
+  .tab-btn-active {
+    @apply border border-ember-600 bg-ember-600 px-4 py-2 font-mono text-xs font-bold
+      uppercase tracking-[0.1em] text-night-page shadow-glowSm transition-all duration-200;
+  }
+}
+
+/* Custom Tactical Scanner Line overlay */
+.radar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(113, 224, 0, 0.8) 50%, transparent 100%);
+  animation: radarScan 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #101511;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f4a35;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #71e000;
+}
