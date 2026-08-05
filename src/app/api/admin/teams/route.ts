@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { requireRole } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 /** Admin — all teams in every status, with rosters, for the approval queue. */
 export async function GET() {
   const admin = await requireRole("admin");

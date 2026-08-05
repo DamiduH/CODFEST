@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { requireRole } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 /** Admin — full audit trail, newest first. */
 export async function GET() {
   const admin = await requireRole("admin");

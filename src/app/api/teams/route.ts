@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 /** Public — approved teams only. */
 export async function GET() {
   const { data, error } = await db()

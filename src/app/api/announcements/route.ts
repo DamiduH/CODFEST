@@ -5,6 +5,8 @@ import { requireRole } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { emitEvent } from "@/lib/socket";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { data } = await db()
     .from("announcements")

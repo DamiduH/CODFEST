@@ -3,6 +3,8 @@ import { db } from "@/lib/supabase";
 import { currentUser } from "@/lib/auth";
 import { MATCH_SELECT } from "@/lib/standings";
 
+export const dynamic = "force-dynamic";
+
 /** Captain dashboard data: own team, roster and matches. */
 export async function GET() {
   const user = await currentUser();
