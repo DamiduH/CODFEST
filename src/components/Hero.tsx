@@ -36,10 +36,12 @@ export default function Hero({
             loop
             muted
             playsInline
-            poster="/hero-bg.png"
             className="h-full w-full object-cover opacity-60"
           >
-            <source src="/hero-bg.mp4" type="video/mp4" />
+            <source
+              src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/hero-bg.mp4"
+              type="video/mp4"
+            />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-night-page/40 via-night-page/10 to-night-page" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-ember-600/10" />
