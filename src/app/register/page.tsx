@@ -56,34 +56,52 @@ export default function RegisterPage() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(acc),
-    });
-    const json = await res.json();
-    setBusy(false);
-    if (!res.ok && !json.needsVerification) {
-      setError(json.error ?? "Registration failed");
-      return;
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(acc),
+      });
+      const text = await res.text();
+      let json: { error?: string; needsVerification?: boolean } = {};
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        setError(res.ok ? "Unexpected server response" : `Server error (${res.status}). Check SUPABASE_SERVICE_ROLE_KEY and Resend env vars.`);
+        return;
+      }
+      if (!res.ok && !json.needsVerification) {
+        setError(json.error ?? "Registration failed");
+        return;
+      }
+      // Do not auto-login — email must be verified first.
+      setPendingVerify(acc.email);
+    } catch {
+      setError("Network error — could not reach the server");
+    } finally {
+      setBusy(false);
     }
-    // Do not auto-login — email must be verified first.
-    setPendingVerify(acc.email);
   }
 
   async function resendVerification() {
     if (!pendingVerify) return;
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/auth/resend-verification", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: pendingVerify }),
-    });
-    const json = await res.json();
-    setBusy(false);
-    if (!res.ok) setError(json.error ?? "Could not resend email");
-    else setError(null);
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingVerify }),
+      });
+      const text = await res.text();
+      const json = text ? JSON.parse(text) : {};
+      if (!res.ok) setError(json.error ?? "Could not resend email");
+      else setError(null);
+    } catch {
+      setError("Could not resend email");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function registerTeam(e: React.FormEvent) {
