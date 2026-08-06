@@ -22,8 +22,8 @@ const db = createClient(
   const { data: existing } = await db.from("users").select("id").eq("email", email).maybeSingle();
 
   const { error } = existing
-    ? await db.from("users").update({ role: "admin", password_hash }).eq("id", existing.id)
-    : await db.from("users").insert({ name, email, password_hash, role: "admin" });
+    ? await db.from("users").update({ role: "admin", password_hash, email_verified: true }).eq("id", existing.id)
+    : await db.from("users").insert({ name, email, password_hash, role: "admin", email_verified: true });
 
   if (error) {
     console.error("Failed:", error.message);

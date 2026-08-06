@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface PlayerRow {
   player_name: string;
@@ -49,6 +50,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [pendingVerify, setPendingVerify] = useState<string | null>(null);
 
   async function createAccount(e: React.FormEvent) {
     e.preventDefault();
@@ -60,15 +62,28 @@ export default function RegisterPage() {
       body: JSON.stringify(acc),
     });
     const json = await res.json();
-    if (!res.ok) {
+    setBusy(false);
+    if (!res.ok && !json.needsVerification) {
       setError(json.error ?? "Registration failed");
-      setBusy(false);
       return;
     }
-    // Auto sign-in so the captain lands straight in the team form.
-    await signIn("credentials", { email: acc.email, password: acc.password, redirect: false });
+    // Do not auto-login — email must be verified first.
+    setPendingVerify(acc.email);
+  }
+
+  async function resendVerification() {
+    if (!pendingVerify) return;
+    setBusy(true);
+    setError(null);
+    const res = await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: pendingVerify }),
+    });
+    const json = await res.json();
     setBusy(false);
-    router.refresh();
+    if (!res.ok) setError(json.error ?? "Could not resend email");
+    else setError(null);
   }
 
   async function registerTeam(e: React.FormEvent) {
@@ -115,6 +130,33 @@ export default function RegisterPage() {
         <button className="btn-primary mt-8" onClick={() => router.push("/dashboard")}>
           Go to team dashboard
         </button>
+      </div>
+    );
+  }
+
+  if (pendingVerify) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center">
+        <p className="font-mono text-sm tracking-[0.1em] text-ember-400">// VERIFY OPERATOR EMAIL</p>
+        <h1 className="section-title mt-3">Check your inbox</h1>
+        <p className="mt-3 text-zinc-400">
+          We sent a verification link to{" "}
+          <strong className="text-ember-400">{pendingVerify}</strong>. Open it to activate
+          your captain account, then sign in to finish squad registration.
+        </p>
+        {error && (
+          <p className="mt-4 border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
+            {error}
+          </p>
+        )}
+        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <Link href="/login" className="btn-primary">
+            Go to login
+          </Link>
+          <button type="button" className="btn-ghost" disabled={busy} onClick={resendVerification}>
+            {busy ? "Sending…" : "Resend email"}
+          </button>
+        </div>
       </div>
     );
   }

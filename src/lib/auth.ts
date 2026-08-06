@@ -19,12 +19,15 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
         const { data: user } = await db()
           .from("users")
-          .select("id, name, email, password_hash, role")
+          .select("id, name, email, password_hash, role, email_verified")
           .eq("email", credentials.email.toLowerCase().trim())
           .single();
         if (!user) return null;
         const ok = await bcrypt.compare(credentials.password, user.password_hash);
         if (!ok) return null;
+        if (!user.email_verified) {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        }
         return { id: user.id, name: user.name, email: user.email, role: user.role };
       },
     }),

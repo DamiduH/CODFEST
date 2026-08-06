@@ -10,8 +10,17 @@ create table if not exists users (
   email text not null unique,
   password_hash text not null,
   role text not null default 'player' check (role in ('admin', 'team_captain', 'player')),
+  email_verified boolean not null default false,
+  email_verify_token text,
+  email_verify_expires timestamptz,
   created_at timestamptz not null default now()
 );
+
+-- If the users table already exists, run this migration once:
+-- alter table users add column if not exists email_verified boolean not null default true;
+-- alter table users add column if not exists email_verify_token text;
+-- alter table users add column if not exists email_verify_expires timestamptz;
+-- update users set email_verified = true where email_verified is distinct from true;
 
 create table if not exists teams (
   id uuid primary key default gen_random_uuid(),
