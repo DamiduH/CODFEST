@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
+import { isOtpTestMode, TEST_OTP } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -36,12 +37,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, message: "Email already verified" });
     }
 
-    if (user.email_verify_expires && new Date(user.email_verify_expires).getTime() < Date.now()) {
-      return NextResponse.json({ error: "OTP expired. Request a new code." }, { status: 410 });
-    }
+    const testBypass = isOtpTestMode() && otp === TEST_OTP;
+    if (!testBypass) {
+      if (user.email_verify_expires && new Date(user.email_verify_expires).getTime() < Date.now()) {
+        return NextResponse.json({ error: "OTP expired. Request a new code." }, { status: 410 });
+      }
 
-    if (!user.email_verify_token || user.email_verify_token !== otp) {
-      return NextResponse.json({ error: "Invalid OTP. Check the code and try again." }, { status: 400 });
+      if (!user.email_verify_token || user.email_verify_token !== otp) {
+        return NextResponse.json({ error: "Invalid OTP. Check the code and try again." }, { status: 400 });
+      }
     }
 
     const { error } = await db()
@@ -55,8 +59,16 @@ export async function POST(req: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    await logAudit(user.id, "user.email_verified", user.id, { email: user.email });
-    return NextResponse.json({ ok: true, message: "Email verified. You can continue." });
+    await logAudit(user.id, "user.email_verified", user.id, {
+      email: user.email,
+      testMode: testBypass || undefined,
+    });
+    return NextResponse.json({
+      ok: true,
+      message: testBypass
+        ? "Email verified (test mode OTP 000000)."
+        : "Email verified. You can continue.",
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Verification failed";
     console.error("[auth/verify-email]", message);

@@ -138,6 +138,9 @@ export default function LoginPage() {
         {needsVerify && (
           <div>
             <label className="label">Email OTP</label>
+            {process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" && (
+              <p className="mb-2 font-mono text-xs text-amber-300">CHECKING MODE — use OTP 000000</p>
+            )}
             <input
               className="input text-center font-mono text-2xl tracking-[0.4em]"
               inputMode="numeric"

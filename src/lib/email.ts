@@ -1,14 +1,23 @@
 import { Resend } from "resend";
 import crypto from "crypto";
 
+/** Fixed OTP used when OTP_TEST_MODE / NEXT_PUBLIC_OTP_TEST_MODE is enabled. */
+export const TEST_OTP = "000000";
+
+export function isOtpTestMode(): boolean {
+  const flag = process.env.OTP_TEST_MODE ?? process.env.NEXT_PUBLIC_OTP_TEST_MODE;
+  return flag === "true" || flag === "1";
+}
+
 function resendClient() {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY is not configured");
   return new Resend(key);
 }
 
-/** 6-digit numeric OTP. */
+/** 6-digit numeric OTP (always 000000 in test/checking mode). */
 export function generateOtp(): string {
+  if (isOtpTestMode()) return TEST_OTP;
   return String(crypto.randomInt(100000, 1000000));
 }
 
@@ -17,8 +26,16 @@ export function otpExpiresAt(): string {
   return new Date(Date.now() + 15 * 60 * 1000).toISOString();
 }
 
-/** Sends the email OTP. Returns Resend error message or null on success. */
+/**
+ * Sends the email OTP.
+ * In test/checking mode, skips Resend and returns success (use OTP 000000).
+ */
 export async function sendVerificationOtp(to: string, name: string, otp: string): Promise<string | null> {
+  if (isOtpTestMode()) {
+    console.info(`[OTP_TEST_MODE] Skipping email to ${to} (${name}). Use OTP: ${TEST_OTP}`);
+    return null;
+  }
+
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
 
   const { error } = await resendClient().emails.send({

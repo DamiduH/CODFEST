@@ -91,9 +91,9 @@ All role checks are enforced server-side; match confirmation is computed only on
 
 ## Notes & known trade-offs
 
-- Email verification is not wired up (no SMTP credentials were provided); the
-  admin-approval step gates every team instead. Add a provider like Resend to
-  `POST /api/auth/register` if needed.
+- Email OTP verification uses Resend. For local/checking builds set
+  `OTP_TEST_MODE=true` and `NEXT_PUBLIC_OTP_TEST_MODE=true` — emails are skipped and
+  OTP `000000` is always accepted. Turn these **off** in production.
 - The pasted Firebase config was not used — the spec mandates Auth.js, and mixing both
   would add a second auth system for no benefit.
 - The public-API rate limiter is in-memory, which is correct for this single-process

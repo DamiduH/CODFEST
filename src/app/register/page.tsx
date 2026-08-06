@@ -83,7 +83,7 @@ export default function RegisterPage() {
       if (json.error && json.needsVerification) setInfo(json.error);
       else if (json.message) setInfo(json.message);
       setPendingVerify(acc.email);
-      setOtp("");
+      setOtp(process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" ? "000000" : "");
     } catch {
       setError("Network error — could not reach the server");
     } finally {
@@ -211,6 +211,11 @@ export default function RegisterPage() {
           Enter the 6-digit code sent to{" "}
           <strong className="text-ember-400">{pendingVerify}</strong>
         </p>
+        {process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" && (
+          <p className="mt-2 text-center font-mono text-xs text-amber-300">
+            CHECKING MODE — use OTP <strong>000000</strong>
+          </p>
+        )}
         <form onSubmit={verifyOtp} className="card mt-8 space-y-4 p-6">
           {error && (
             <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
