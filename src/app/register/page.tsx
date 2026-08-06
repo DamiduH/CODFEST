@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 interface PlayerRow {
   player_name: string;
@@ -51,11 +50,14 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [pendingVerify, setPendingVerify] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
+  const [info, setInfo] = useState<string | null>(null);
 
   async function createAccount(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setInfo(null);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -63,21 +65,63 @@ export default function RegisterPage() {
         body: JSON.stringify(acc),
       });
       const text = await res.text();
-      let json: { error?: string; needsVerification?: boolean } = {};
+      let json: { error?: string; needsVerification?: boolean; message?: string } = {};
       try {
         json = text ? JSON.parse(text) : {};
       } catch {
-        setError(res.ok ? "Unexpected server response" : `Server error (${res.status}). Check SUPABASE_SERVICE_ROLE_KEY and Resend env vars.`);
+        setError(
+          res.ok
+            ? "Unexpected server response"
+            : `Server error (${res.status}). Check SUPABASE_SERVICE_ROLE_KEY and Resend env vars.`
+        );
         return;
       }
       if (!res.ok && !json.needsVerification) {
         setError(json.error ?? "Registration failed");
         return;
       }
-      // Do not auto-login — email must be verified first.
+      if (json.error && json.needsVerification) setInfo(json.error);
+      else if (json.message) setInfo(json.message);
       setPendingVerify(acc.email);
+      setOtp("");
     } catch {
       setError("Network error — could not reach the server");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendingVerify) return;
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    try {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingVerify, otp }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Invalid OTP");
+        return;
+      }
+      // Sign in so captain can continue to squad registration.
+      const signed = await signIn("credentials", {
+        email: pendingVerify,
+        password: acc.password,
+        redirect: false,
+      });
+      if (signed?.error) {
+        setError("Email verified. Sign in failed — go to login.");
+        return;
+      }
+      setPendingVerify(null);
+      router.refresh();
+    } catch {
+      setError("Could not verify OTP");
     } finally {
       setBusy(false);
     }
@@ -87,6 +131,7 @@ export default function RegisterPage() {
     if (!pendingVerify) return;
     setBusy(true);
     setError(null);
+    setInfo(null);
     try {
       const res = await fetch("/api/auth/resend-verification", {
         method: "POST",
@@ -95,10 +140,10 @@ export default function RegisterPage() {
       });
       const text = await res.text();
       const json = text ? JSON.parse(text) : {};
-      if (!res.ok) setError(json.error ?? "Could not resend email");
-      else setError(null);
+      if (!res.ok) setError(json.error ?? "Could not resend OTP");
+      else setInfo(json.message ?? "New OTP sent");
     } catch {
-      setError("Could not resend email");
+      setError("Could not resend OTP");
     } finally {
       setBusy(false);
     }
@@ -154,27 +199,49 @@ export default function RegisterPage() {
 
   if (pendingVerify) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center">
-        <p className="font-mono text-sm tracking-[0.1em] text-ember-400">// VERIFY OPERATOR EMAIL</p>
-        <h1 className="section-title mt-3">Check your inbox</h1>
-        <p className="mt-3 text-zinc-400">
-          We sent a verification link to{" "}
-          <strong className="text-ember-400">{pendingVerify}</strong>. Open it to activate
-          your captain account, then sign in to finish squad registration.
-        </p>
-        {error && (
-          <p className="mt-4 border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
-            {error}
+      <div className="mx-auto max-w-md px-4 py-16">
+        <div className="border-l-4 border-l-ember-400 pl-4">
+          <h1 className="section-title">Verify Email</h1>
+          <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
+            // OTP_CLEARANCE
           </p>
-        )}
-        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <Link href="/login" className="btn-primary">
-            Go to login
-          </Link>
-          <button type="button" className="btn-ghost" disabled={busy} onClick={resendVerification}>
-            {busy ? "Sending…" : "Resend email"}
-          </button>
         </div>
+        <StepBar step={1} />
+        <p className="mt-4 text-center text-sm text-zinc-500">
+          Enter the 6-digit code sent to{" "}
+          <strong className="text-ember-400">{pendingVerify}</strong>
+        </p>
+        <form onSubmit={verifyOtp} className="card mt-8 space-y-4 p-6">
+          {error && (
+            <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
+              {error}
+            </p>
+          )}
+          {info && (
+            <p className="border border-ember-600/40 bg-ember-600/10 px-3 py-2 font-mono text-xs text-ember-400">
+              {info}
+            </p>
+          )}
+          <div>
+            <label className="label">One-time password (OTP)</label>
+            <input
+              className="input text-center font-mono text-2xl tracking-[0.4em]"
+              inputMode="numeric"
+              pattern="\d{6}"
+              maxLength={6}
+              placeholder="••••••"
+              required
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            />
+          </div>
+          <button className="btn-primary w-full" disabled={busy || otp.length !== 6}>
+            {busy ? "Verifying…" : "Verify & Continue →"}
+          </button>
+          <button type="button" className="btn-ghost w-full" disabled={busy} onClick={resendVerification}>
+            {busy ? "Sending…" : "Resend OTP"}
+          </button>
+        </form>
       </div>
     );
   }

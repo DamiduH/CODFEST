@@ -9,6 +9,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -19,6 +20,36 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     setInfo(null);
+
+    if (needsVerify) {
+      try {
+        const res = await fetch("/api/auth/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(json.error ?? "Invalid OTP");
+          setBusy(false);
+          return;
+        }
+        const signed = await signIn("credentials", { email, password, redirect: false });
+        setBusy(false);
+        if (signed?.error) {
+          setError("Email verified, but sign-in failed. Try again.");
+          setNeedsVerify(false);
+          return;
+        }
+        router.push("/dashboard");
+        router.refresh();
+      } catch {
+        setBusy(false);
+        setError("Could not verify OTP");
+      }
+      return;
+    }
+
     setNeedsVerify(false);
 
     const pre = await fetch("/api/auth/preflight", {
@@ -32,7 +63,16 @@ export default function LoginPage() {
       setBusy(false);
       if (preJson.reason === "unverified") {
         setNeedsVerify(true);
-        setError("Email not verified. Check your inbox or resend the link below.");
+        setError("Email not verified. Enter the OTP from your inbox (or resend).");
+        // Auto-send a fresh OTP so they have one ready.
+        void fetch("/api/auth/resend-verification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }).then(async (r) => {
+          const j = await r.json().catch(() => ({}));
+          if (r.ok) setInfo(j.message ?? "OTP sent");
+        });
       } else {
         setError("Invalid email or password");
       }
@@ -44,7 +84,7 @@ export default function LoginPage() {
     if (res?.error) {
       if (res.error === "EMAIL_NOT_VERIFIED") {
         setNeedsVerify(true);
-        setError("Email not verified. Check your inbox or resend the link below.");
+        setError("Email not verified. Enter the OTP from your inbox.");
       } else {
         setError("Invalid email or password");
       }
@@ -64,10 +104,10 @@ export default function LoginPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) setError(json.error ?? "Could not resend email");
-    else setInfo(json.message ?? "Verification email sent");
+    if (!res.ok) setError(json.error ?? "Could not resend OTP");
+    else setInfo(json.message ?? "OTP sent");
   }
 
   return (
@@ -95,12 +135,27 @@ export default function LoginPage() {
           <label className="label">Password</label>
           <input className="input" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
-        <button className="btn-primary w-full" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
+        {needsVerify && (
+          <div>
+            <label className="label">Email OTP</label>
+            <input
+              className="input text-center font-mono text-2xl tracking-[0.4em]"
+              inputMode="numeric"
+              pattern="\d{6}"
+              maxLength={6}
+              placeholder="••••••"
+              required
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            />
+          </div>
+        )}
+        <button className="btn-primary w-full" disabled={busy || (needsVerify && otp.length !== 6)}>
+          {busy ? (needsVerify ? "Verifying…" : "Signing in…") : needsVerify ? "Verify OTP & Sign in" : "Sign in"}
         </button>
         {needsVerify && (
           <button type="button" className="btn-ghost w-full" disabled={busy} onClick={resendVerification}>
-            Resend verification email
+            Resend OTP
           </button>
         )}
         <p className="text-center text-sm text-zinc-500">
