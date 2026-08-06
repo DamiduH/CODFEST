@@ -14,12 +14,17 @@ if (!email || !password) {
 
 const db = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 (async () => {
   const password_hash = bcrypt.hashSync(password, 10);
   const { data: existing } = await db.from("users").select("id").eq("email", email).maybeSingle();
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("SUPABASE_SERVICE_ROLE_KEY is required (publishable key cannot bypass RLS).");
+    process.exit(1);
+  }
 
   const { error } = existing
     ? await db.from("users").update({ role: "admin", password_hash, email_verified: true }).eq("id", existing.id)
