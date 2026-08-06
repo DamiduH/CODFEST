@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import crypto from "crypto";
 import { db } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
 import { generateOtp, otpExpiresAt, sendVerificationOtp } from "@/lib/email";
@@ -8,10 +9,9 @@ import { generateOtp, otpExpiresAt, sendVerificationOtp } from "@/lib/email";
 const schema = z.object({
   name: z.string().min(2).max(60),
   email: z.string().email(),
-  password: z.string().min(8).max(100),
 });
 
-/** Creates a captain account and emails a 6-digit OTP. */
+/** Creates a captain profile (no password) and emails a 6-digit OTP. */
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const email = parsed.data.email.toLowerCase().trim();
     const { data: existing, error: lookupError } = await db()
       .from("users")
-      .select("id, email_verified")
+      .select("id, email_verified, role")
       .eq("email", email)
       .maybeSingle();
 
@@ -39,30 +39,26 @@ export async function POST(req: Request) {
     }
 
     if (existing?.email_verified) {
-      return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
+      return NextResponse.json(
+        { error: "This email is already registered. Use OTP sign-in if you need to access your squad." },
+        { status: 409 }
+      );
     }
 
     const otp = generateOtp();
     const expires = otpExpiresAt();
-    const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+    // Random unusable password — captains authenticate with OTP only.
+    const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
 
-    // Unverified account already exists → refresh OTP instead of creating a duplicate.
     if (existing && !existing.email_verified) {
       await db()
         .from("users")
         .update({
           name: parsed.data.name,
-          password_hash: passwordHash,
           email_verify_token: otp,
           email_verify_expires: expires,
         })
         .eq("id", existing.id);
-
-      const { data: user } = await db()
-        .from("users")
-        .select("id, name, email")
-        .eq("id", existing.id)
-        .single();
 
       let mailError: string | null = null;
       try {
@@ -74,11 +70,11 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           message: mailError
-            ? `Account found. OTP email failed: ${mailError}`
+            ? `Profile found. OTP email failed: ${mailError}`
             : "OTP sent to your email. Enter the code to continue.",
           needsVerification: true,
           error: mailError ?? undefined,
-          user: user ? { id: user.id, email: user.email } : { email },
+          user: { id: existing.id, email },
         },
         { status: mailError ? 201 : 200 }
       );
@@ -117,7 +113,7 @@ export async function POST(req: Request) {
     if (mailError) {
       return NextResponse.json(
         {
-          error: `Account created but OTP email failed: ${mailError}`,
+          error: `Profile created but OTP email failed: ${mailError}`,
           needsVerification: true,
           user: { id: user.id, email: user.email },
         },
@@ -128,7 +124,7 @@ export async function POST(req: Request) {
     await logAudit(user.id, "user.registered", user.id, { email });
     return NextResponse.json(
       {
-        message: "Account created. Enter the OTP sent to your email.",
+        message: "OTP sent. Enter the code to continue team registration.",
         needsVerification: true,
         user: { id: user.id, email: user.email },
       },

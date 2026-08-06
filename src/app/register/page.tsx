@@ -12,9 +12,9 @@ interface PlayerRow {
 
 const emptyPlayer = (sub = false): PlayerRow => ({ player_name: "", game_id: "", is_substitute: sub });
 
-/** [01] AUTH / [02] SQUAD progress indicator. */
+/** [01] OTP / [02] SQUAD progress indicator. */
 function StepBar({ step }: { step: 1 | 2 }) {
-  const steps = ["[01] AUTH", "[02] SQUAD"];
+  const steps = ["[01] OTP", "[02] SQUAD"];
   return (
     <div className="mt-6 flex gap-2">
       {steps.map((label, i) => (
@@ -37,9 +37,7 @@ export default function RegisterPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Step 1 — captain account
-  const [acc, setAcc] = useState({ name: "", email: "", password: "" });
-  // Step 2 — team details
+  const [acc, setAcc] = useState({ name: "", email: "" });
   const [team, setTeam] = useState({ team_name: "", phone: "", email: "", discord: "", whatsapp: "" });
   const [players, setPlayers] = useState<PlayerRow[]>([emptyPlayer()]);
   const [substitute, setSubstitute] = useState<PlayerRow | null>(null);
@@ -53,7 +51,7 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [info, setInfo] = useState<string | null>(null);
 
-  async function createAccount(e: React.FormEvent) {
+  async function startOtp(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
@@ -69,21 +67,18 @@ export default function RegisterPage() {
       try {
         json = text ? JSON.parse(text) : {};
       } catch {
-        setError(
-          res.ok
-            ? "Unexpected server response"
-            : `Server error (${res.status}). Check SUPABASE_SERVICE_ROLE_KEY and Resend env vars.`
-        );
+        setError(res.ok ? "Unexpected server response" : `Server error (${res.status})`);
         return;
       }
       if (!res.ok && !json.needsVerification) {
-        setError(json.error ?? "Registration failed");
+        setError(json.error ?? "Could not start registration");
         return;
       }
       if (json.error && json.needsVerification) setInfo(json.error);
       else if (json.message) setInfo(json.message);
       setPendingVerify(acc.email);
       setOtp(process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" ? "000000" : "");
+      setTeam((t) => ({ ...t, email: t.email || acc.email }));
     } catch {
       setError("Network error — could not reach the server");
     } finally {
@@ -98,24 +93,17 @@ export default function RegisterPage() {
     setError(null);
     setInfo(null);
     try {
-      const res = await fetch("/api/auth/verify-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: pendingVerify, otp }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(json.error ?? "Invalid OTP");
-        return;
-      }
-      // Sign in so captain can continue to squad registration.
       const signed = await signIn("credentials", {
         email: pendingVerify,
-        password: acc.password,
+        otp,
         redirect: false,
       });
       if (signed?.error) {
-        setError("Email verified. Sign in failed — go to login.");
+        const map: Record<string, string> = {
+          OTP_EXPIRED: "OTP expired. Request a new code.",
+          INVALID_OTP: "Invalid OTP. Check the code and try again.",
+        };
+        setError(map[signed.error] ?? "Invalid OTP");
         return;
       }
       setPendingVerify(null);
@@ -138,8 +126,7 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: pendingVerify }),
       });
-      const text = await res.text();
-      const json = text ? JSON.parse(text) : {};
+      const json = await res.json().catch(() => ({}));
       if (!res.ok) setError(json.error ?? "Could not resend OTP");
       else setInfo(json.message ?? "New OTP sent");
     } catch {
@@ -171,7 +158,7 @@ export default function RegisterPage() {
     if (logo) form.set("logo", logo);
 
     const res = await fetch("/api/teams/register", { method: "POST", body: form });
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) return setError(json.error ?? "Team registration failed");
     setDone(true);
@@ -251,47 +238,58 @@ export default function RegisterPage() {
     );
   }
 
-  // Step 1: not signed in → create captain account
+  // Not signed in → name + email only (no password / login setup)
   if (!session) {
     return (
       <div className="mx-auto max-w-md px-4 py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
-          <h1 className="section-title">Command Center</h1>
+          <h1 className="section-title">Squad Registration</h1>
           <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
-            // DEPARTMENTAL_REGISTRATION_HUB
+            // OTP + TEAM ONLY
           </p>
         </div>
         <StepBar step={1} />
         <p className="mt-4 text-center text-sm text-zinc-500">
-          Create your <strong className="text-zinc-300">captain account</strong> first. Only the
-          team captain should register.
+          Only the <strong className="text-zinc-300">team captain</strong> registers. We verify your
+          email with an OTP — no password account to create.
         </p>
-        <form onSubmit={createAccount} className="card mt-8 space-y-4 p-6">
-          {error && <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">{error}</p>}
+        <form onSubmit={startOtp} className="card mt-8 space-y-4 p-6">
+          {error && (
+            <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
+              {error}
+            </p>
+          )}
           <div>
-            <label className="label">Commanding Officer (real name)</label>
-            <input className="input" placeholder="REAL_NAME" required minLength={2} value={acc.name}
-              onChange={(e) => setAcc({ ...acc, name: e.target.value })} />
+            <label className="label">Captain real name</label>
+            <input
+              className="input"
+              placeholder="REAL_NAME"
+              required
+              minLength={2}
+              value={acc.name}
+              onChange={(e) => setAcc({ ...acc, name: e.target.value })}
+            />
           </div>
           <div>
             <label className="label">Email</label>
-            <input className="input" placeholder="OPERATOR@DOMAIN" type="email" required value={acc.email}
-              onChange={(e) => setAcc({ ...acc, email: e.target.value })} />
-          </div>
-          <div>
-            <label className="label">Password (min 8 characters)</label>
-            <input className="input" placeholder="********" type="password" required minLength={8} value={acc.password}
-              onChange={(e) => setAcc({ ...acc, password: e.target.value })} />
+            <input
+              className="input"
+              placeholder="OPERATOR@DOMAIN"
+              type="email"
+              required
+              value={acc.email}
+              onChange={(e) => setAcc({ ...acc, email: e.target.value })}
+            />
           </div>
           <button className="btn-primary w-full" disabled={busy}>
-            {busy ? "Creating account…" : "Next_Step →"}
+            {busy ? "Sending OTP…" : "Send OTP →"}
           </button>
         </form>
       </div>
     );
   }
 
-  // Step 2: signed in → team registration form
+  // Signed in → team registration
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="border-l-4 border-l-ember-400 pl-4">
@@ -309,38 +307,68 @@ export default function RegisterPage() {
       </ul>
 
       <form onSubmit={registerTeam} className="card mt-6 space-y-5 p-6">
-        {error && <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">{error}</p>}
+        {error && (
+          <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
+            {error}
+          </p>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label">Team name</label>
-            <input className="input" required maxLength={30} value={team.team_name}
-              onChange={(e) => setTeam({ ...team, team_name: e.target.value })} />
+            <input
+              className="input"
+              required
+              maxLength={30}
+              value={team.team_name}
+              onChange={(e) => setTeam({ ...team, team_name: e.target.value })}
+            />
           </div>
           <div>
             <label className="label">Team logo (optional, max 4 MB)</label>
-            <input className="input" type="file" accept="image/*"
-              onChange={(e) => setLogo(e.target.files?.[0] ?? null)} />
+            <input
+              className="input"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
+            />
           </div>
           <div>
             <label className="label">Captain phone</label>
-            <input className="input" required value={team.phone}
-              onChange={(e) => setTeam({ ...team, phone: e.target.value })} />
+            <input
+              className="input"
+              required
+              value={team.phone}
+              onChange={(e) => setTeam({ ...team, phone: e.target.value })}
+            />
           </div>
           <div>
             <label className="label">Team contact email</label>
-            <input className="input" type="email" required value={team.email}
-              onChange={(e) => setTeam({ ...team, email: e.target.value })} />
+            <input
+              className="input"
+              type="email"
+              required
+              value={team.email}
+              onChange={(e) => setTeam({ ...team, email: e.target.value })}
+            />
           </div>
           <div>
             <label className="label">Discord</label>
-            <input className="input" placeholder="username" value={team.discord}
-              onChange={(e) => setTeam({ ...team, discord: e.target.value })} />
+            <input
+              className="input"
+              placeholder="username"
+              value={team.discord}
+              onChange={(e) => setTeam({ ...team, discord: e.target.value })}
+            />
           </div>
           <div>
             <label className="label">WhatsApp</label>
-            <input className="input" placeholder="+91…" value={team.whatsapp}
-              onChange={(e) => setTeam({ ...team, whatsapp: e.target.value })} />
+            <input
+              className="input"
+              placeholder="+91…"
+              value={team.whatsapp}
+              onChange={(e) => setTeam({ ...team, whatsapp: e.target.value })}
+            />
           </div>
         </div>
 
@@ -348,8 +376,11 @@ export default function RegisterPage() {
           <div className="flex items-center justify-between">
             <label className="label !mb-0">Players (up to 5, plus you as captain)</label>
             {players.length < 5 && (
-              <button type="button" className="text-sm font-semibold text-ember-400 hover:text-ember-500"
-                onClick={() => setPlayers([...players, emptyPlayer()])}>
+              <button
+                type="button"
+                className="text-sm font-semibold text-ember-400 hover:text-ember-500"
+                onClick={() => setPlayers([...players, emptyPlayer()])}
+              >
                 + Add player
               </button>
             )}
@@ -357,13 +388,29 @@ export default function RegisterPage() {
           <div className="mt-2 space-y-2">
             {players.map((p, i) => (
               <div key={i} className="flex gap-2">
-                <input className="input" placeholder={`Player ${i + 1} real name`} value={p.player_name}
-                  onChange={(e) => setPlayers(players.map((x, j) => (j === i ? { ...x, player_name: e.target.value } : x)))} />
-                <input className="input" placeholder="In-game ID" value={p.game_id}
-                  onChange={(e) => setPlayers(players.map((x, j) => (j === i ? { ...x, game_id: e.target.value } : x)))} />
+                <input
+                  className="input"
+                  placeholder={`Player ${i + 1} real name`}
+                  value={p.player_name}
+                  onChange={(e) =>
+                    setPlayers(players.map((x, j) => (j === i ? { ...x, player_name: e.target.value } : x)))
+                  }
+                />
+                <input
+                  className="input"
+                  placeholder="In-game ID"
+                  value={p.game_id}
+                  onChange={(e) =>
+                    setPlayers(players.map((x, j) => (j === i ? { ...x, game_id: e.target.value } : x)))
+                  }
+                />
                 {players.length > 1 && (
-                  <button type="button" className="px-2 text-zinc-500 hover:text-red-400"
-                    onClick={() => setPlayers(players.filter((_, j) => j !== i))} aria-label="Remove player">
+                  <button
+                    type="button"
+                    className="px-2 text-zinc-500 hover:text-red-400"
+                    onClick={() => setPlayers(players.filter((_, j) => j !== i))}
+                    aria-label="Remove player"
+                  >
                     ✕
                   </button>
                 )}
@@ -375,17 +422,28 @@ export default function RegisterPage() {
         <div>
           <div className="flex items-center justify-between">
             <label className="label !mb-0">Substitute (optional)</label>
-            <button type="button" className="text-sm font-semibold text-ember-400 hover:text-ember-500"
-              onClick={() => setSubstitute(substitute ? null : emptyPlayer(true))}>
+            <button
+              type="button"
+              className="text-sm font-semibold text-ember-400 hover:text-ember-500"
+              onClick={() => setSubstitute(substitute ? null : emptyPlayer(true))}
+            >
               {substitute ? "Remove substitute" : "+ Add substitute"}
             </button>
           </div>
           {substitute && (
             <div className="mt-2 flex gap-2">
-              <input className="input" placeholder="Substitute real name" value={substitute.player_name}
-                onChange={(e) => setSubstitute({ ...substitute, player_name: e.target.value })} />
-              <input className="input" placeholder="In-game ID" value={substitute.game_id}
-                onChange={(e) => setSubstitute({ ...substitute, game_id: e.target.value })} />
+              <input
+                className="input"
+                placeholder="Substitute real name"
+                value={substitute.player_name}
+                onChange={(e) => setSubstitute({ ...substitute, player_name: e.target.value })}
+              />
+              <input
+                className="input"
+                placeholder="In-game ID"
+                value={substitute.game_id}
+                onChange={(e) => setSubstitute({ ...substitute, game_id: e.target.value })}
+              />
             </div>
           )}
         </div>
@@ -393,8 +451,8 @@ export default function RegisterPage() {
         <label className="flex items-start gap-3 text-sm text-zinc-400">
           <input type="checkbox" className="mt-1" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
           <span>
-            We have read and agree to the tournament rules, code of conduct and the
-            dual-submission score verification procedure.
+            We have read and agree to the tournament rules, code of conduct and the dual-submission
+            score verification procedure.
           </span>
         </label>
 

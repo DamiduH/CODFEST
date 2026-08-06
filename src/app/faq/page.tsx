@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const FAQS: [string, string][] = [
-  ["How do I register my team?", "The team captain creates an account on the Register page, then fills in the team form (name, logo, contacts, up to 5 players + optional substitute). Your team goes live after admin approval."],
+  ["How do I register my team?", "The team captain verifies email with an OTP on the Register page (no password setup), then fills in the team form (name, logo, contacts, up to 5 players + optional substitute). Your team goes live after admin approval."],
   ["Why do both captains have to submit the score?", "Matches run on your own PCs, so there's no server we can read results from. Both captains report the score with a screenshot; if the reports match, the result confirms automatically. If not, admins review the screenshots."],
   ["What screenshot do I need?", "The final scoreboard at the end of the last round, showing both team scores clearly. Take it before anyone leaves the server."],
   ["What happens if the other captain never submits?", "The match stays in 'Awaiting scores'. After the deadline in the rules, admins can resolve it manually using the available evidence — usually in favour of the team that submitted proof."],

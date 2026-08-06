@@ -9,7 +9,10 @@ const schema = z.object({
   email: z.string().email(),
 });
 
-/** Re-sends a verification OTP for an unverified account. */
+/**
+ * Sends an OTP for registration verify or passwordless captain sign-in.
+ * Works for both unverified and verified captain accounts.
+ */
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
@@ -21,17 +24,20 @@ export async function POST(req: Request) {
     const email = parsed.data.email.toLowerCase().trim();
     const { data: user } = await db()
       .from("users")
-      .select("id, name, email, email_verified")
+      .select("id, name, email, email_verified, role")
       .eq("email", email)
       .maybeSingle();
 
-    // Same response either way to avoid email enumeration.
     if (!user) {
-      return NextResponse.json({ message: "If that account exists and is unverified, a new OTP was sent." });
+      return NextResponse.json({ message: "If that email is registered, a new OTP was sent." });
     }
 
-    if (user.email_verified) {
-      return NextResponse.json({ message: "Email is already verified. You can sign in." });
+    // Admins use password login — don't OTP them unless test/checking.
+    if (user.role === "admin") {
+      return NextResponse.json({
+        message: "Admin accounts sign in with password on the admin login form.",
+        admin: true,
+      });
     }
 
     const otp = generateOtp();
@@ -52,7 +58,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Failed to send OTP: ${mailError}` }, { status: 502 });
     }
 
-    return NextResponse.json({ message: "New OTP sent. Check your inbox." });
+    return NextResponse.json({
+      message: user.email_verified
+        ? "OTP sent. Enter the code to sign in."
+        : "New OTP sent. Check your inbox.",
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Resend failed";
     console.error("[auth/resend-verification]", message);

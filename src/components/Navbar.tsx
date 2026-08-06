@@ -144,11 +144,11 @@ export default function Navbar() {
               </button>
             ) : (
               <Link
-                href="/login"
+                href="/register"
                 onClick={() => setOpen(false)}
                 className="mt-2 block px-3 py-2.5 font-mono text-xs uppercase tracking-[0.1em] text-ember-400 hover:text-ember-300"
               >
-                Sign in
+                Register Team
               </Link>
             )}
           </motion.nav>

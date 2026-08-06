@@ -8,7 +8,7 @@ const bcrypt = require("bcryptjs");
 
 const [email, password, name = "Admin"] = process.argv.slice(2);
 if (!email || !password) {
-  console.error('Usage: node scripts/seed-admin.js <email> <password> ["Name"]');
+  console.error('Usage: node scripts/seed-admin.js kiboxsonleena2004@gmail.com "1234" ["kibo"]');
   process.exit(1);
 }
 
