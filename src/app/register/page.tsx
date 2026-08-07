@@ -12,9 +12,9 @@ interface PlayerRow {
 
 const emptyPlayer = (sub = false): PlayerRow => ({ player_name: "", game_id: "", is_substitute: sub });
 
-/** [01] OTP / [02] SQUAD progress indicator. */
+/** [01] VERIFY EMAIL / [02] REGISTER SQUAD progress indicator. */
 function StepBar({ step }: { step: 1 | 2 }) {
-  const steps = ["[01] OTP", "[02] SQUAD"];
+  const steps = ["[01] VERIFY EMAIL", "[02] REGISTER SQUAD"];
   return (
     <div className="mt-6 flex gap-2">
       {steps.map((label, i) => (
@@ -238,20 +238,20 @@ export default function RegisterPage() {
     );
   }
 
-  // Not signed in → name + email only (no password / login setup)
+  // Not signed in → captain name + email, then OTP
   if (!session) {
     return (
       <div className="mx-auto max-w-md px-4 py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
           <h1 className="section-title">Squad Registration</h1>
           <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
-            // OTP + TEAM ONLY
+            // TEAM CAPTAIN — OTP VERIFIED
           </p>
         </div>
         <StepBar step={1} />
         <p className="mt-4 text-center text-sm text-zinc-500">
-          Only the <strong className="text-zinc-300">team captain</strong> registers. We verify your
-          email with an OTP — no password account to create.
+          Only the <strong className="text-zinc-300">team captain</strong> registers. Enter your
+          name and email — we&apos;ll send a one-time code. No password required.
         </p>
         <form onSubmit={startOtp} className="card mt-8 space-y-4 p-6">
           {error && (
