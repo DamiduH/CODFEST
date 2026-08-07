@@ -33,7 +33,7 @@ export default function MatchesPage() {
   }, [tab, load]);
 
   useSocketEvents(
-    ["match:live", "match:finished", "match:disputed", "match:score_submitted", "bracket:updated"],
+    ["match:live", "match:finished", "match:disputed", "match:score_submitted", "bracket:updated", "match:live_score"],
     () => load(tab)
   );
 

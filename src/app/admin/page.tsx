@@ -10,7 +10,7 @@ import TeamMark from "@/components/TeamMark";
 import { getSocket, useSocketEvents } from "@/hooks/useSocket";
 import { ROUND_NAMES, type Match } from "@/lib/types";
 
-const TABS = ["Registrations", "Fixtures", "Disputes", "Announcements", "Audit log"] as const;
+const TABS = ["Registrations", "Fixtures", "Live Score", "Disputes", "Announcements", "Audit log"] as const;
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -73,6 +73,7 @@ export default function AdminPage() {
       <div className="mt-6">
         {tab === "Registrations" && <RegistrationsPanel />}
         {tab === "Fixtures" && <FixturesPanel />}
+        {tab === "Live Score" && <LiveScorePanel />}
         {tab === "Disputes" && <DisputesPanel />}
         {tab === "Announcements" && <AnnouncementsPanel />}
         {tab === "Audit log" && <AuditPanel />}
@@ -220,6 +221,172 @@ function FixturesPanel() {
             No fixtures yet — generate the bracket once teams are approved.
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * LiveScorePanel — admin pushes in-progress scores from the server laptop.
+ * Updates persist to the DB and Socket.IO broadcasts to every connected tab.
+ */
+function LiveScorePanel() {
+  const [liveMatches, setLiveMatches] = useState<Match[]>([]);
+  const [scores, setScores] = useState<Record<string, { s1: string; s2: string }>>({});
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [feedback, setFeedback] = useState<Record<string, string>>({});
+
+  const load = useCallback(() => {
+    fetch("/api/matches?status=live")
+      .then((r) => r.json())
+      .then((j) => {
+        const matches: Match[] = j.matches ?? [];
+        setLiveMatches(matches);
+        // Seed score inputs from whatever is already stored.
+        setScores((prev) => {
+          const next = { ...prev };
+          matches.forEach((m: any) => {
+            if (!next[m.id]) {
+              next[m.id] = {
+                s1: m.live_score1 != null ? String(m.live_score1) : "",
+                s2: m.live_score2 != null ? String(m.live_score2) : "",
+              };
+            }
+          });
+          return next;
+        });
+      });
+  }, []);
+
+  useEffect(load, [load]);
+  // Refresh list when a match starts or finishes.
+  useSocketEvents(["match:live", "match:finished"], () => load());
+
+  async function push(matchId: string) {
+    const s = scores[matchId];
+    if (!s) return;
+    const score1 = parseInt(s.s1, 10);
+    const score2 = parseInt(s.s2, 10);
+    if (isNaN(score1) || isNaN(score2) || score1 < 0 || score2 < 0) {
+      setFeedback((p) => ({ ...p, [matchId]: "Enter valid non-negative scores." }));
+      return;
+    }
+    setBusy((p) => ({ ...p, [matchId]: true }));
+    const res = await fetch(`/api/matches/${matchId}/live-score`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ score1, score2 }),
+    });
+    const json = await res.json();
+    setBusy((p) => ({ ...p, [matchId]: false }));
+    setFeedback((p) => ({
+      ...p,
+      [matchId]: res.ok ? `✓ Pushed ${score1}–${score2} live!` : json.error ?? "Failed",
+    }));
+  }
+
+  return (
+    <div>
+      <div className="mb-4 border border-ember-400/30 bg-ember-600/10 px-4 py-3 font-mono text-xs text-ember-300">
+        🖥️ SERVER LAPTOP — type the current in-game score and hit <strong>Push</strong>.
+        All connected browsers update instantly via Socket.IO.
+      </div>
+
+      {liveMatches.length === 0 && (
+        <p className="py-8 text-center text-sm text-zinc-500">
+          No live matches right now. Start a match in the Fixtures tab first.
+        </p>
+      )}
+
+      <div className="space-y-4">
+        {liveMatches.map((m) => {
+          const isBusy = busy[m.id] ?? false;
+          const fb = feedback[m.id];
+          const s = scores[m.id] ?? { s1: "", s2: "" };
+          return (
+            <div key={m.id} className="card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+                    {ROUND_NAMES[m.round] ?? `Round ${m.round}`}
+                  </span>
+                  <h3 className="mt-0.5 font-display text-lg font-bold text-white">
+                    {m.team1?.team_name ?? "TBD"}
+                    <span className="mx-2 text-zinc-500">vs</span>
+                    {m.team2?.team_name ?? "TBD"}
+                  </h3>
+                </div>
+                <span className="animate-pulse rounded bg-green-500/20 px-2 py-1 font-mono text-[10px] font-bold uppercase text-green-400">
+                  ● LIVE
+                </span>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-end gap-4">
+                {/* Team 1 score */}
+                <div>
+                  <label className="label">{m.team1?.team_name ?? "Team 1"}</label>
+                  <input
+                    id={`s1-${m.id}`}
+                    type="number"
+                    min={0}
+                    className="input !w-24 text-center text-xl font-bold"
+                    value={s.s1}
+                    onChange={(e) =>
+                      setScores((p) => ({
+                        ...p,
+                        [m.id]: { ...p[m.id], s1: e.target.value },
+                      }))
+                    }
+                    placeholder="0"
+                    onKeyDown={(e) => e.key === "Enter" && push(m.id)}
+                  />
+                </div>
+
+                <span className="mb-2 text-xl font-bold text-zinc-600">–</span>
+
+                {/* Team 2 score */}
+                <div>
+                  <label className="label">{m.team2?.team_name ?? "Team 2"}</label>
+                  <input
+                    id={`s2-${m.id}`}
+                    type="number"
+                    min={0}
+                    className="input !w-24 text-center text-xl font-bold"
+                    value={s.s2}
+                    onChange={(e) =>
+                      setScores((p) => ({
+                        ...p,
+                        [m.id]: { ...p[m.id], s2: e.target.value },
+                      }))
+                    }
+                    placeholder="0"
+                    onKeyDown={(e) => e.key === "Enter" && push(m.id)}
+                  />
+                </div>
+
+                <button
+                  className="btn-primary !py-2.5"
+                  onClick={() => push(m.id)}
+                  disabled={isBusy}
+                >
+                  {isBusy ? "Pushing…" : "Push live score"}
+                </button>
+
+                {fb && (
+                  <span
+                    className={`font-mono text-xs ${
+                      fb.startsWith("✓") ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    {fb}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
