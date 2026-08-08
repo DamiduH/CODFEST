@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   title: "CODFEST 2026 — Call of Duty 4 Tournament",
   description:
     "CODFEST 2026: intra-departmental Call of Duty 4 Promod esports tournament. Live brackets, real-time scores, team registration.",
+  icons: {
+    icon: "/NavBarLogo.png",
+    shortcut: "/NavBarLogo.png",
+    apple: "/NavBarLogo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
