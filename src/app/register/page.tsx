@@ -10,7 +10,7 @@ interface PlayerRow {
   is_substitute: boolean;
 }
 
-const emptyPlayer = (sub = false): PlayerRow => ({ player_name: "", game_id: "", is_substitute: sub });
+const emptyPlayer = (): PlayerRow => ({ player_name: "", game_id: "", is_substitute: false });
 
 /** [01] OTP / [02] SQUAD progress indicator. */
 function StepBar({ step }: { step: 1 | 2 }) {
@@ -40,7 +40,6 @@ export default function RegisterPage() {
   const [acc, setAcc] = useState({ name: "", email: "" });
   const [team, setTeam] = useState({ team_name: "", phone: "", email: "", discord: "", whatsapp: "" });
   const [players, setPlayers] = useState<PlayerRow[]>([emptyPlayer()]);
-  const [substitute, setSubstitute] = useState<PlayerRow | null>(null);
   const [logo, setLogo] = useState<File | null>(null);
   const [agreed, setAgreed] = useState(false);
 
@@ -150,7 +149,6 @@ export default function RegisterPage() {
       agreed: true,
       players: [
         ...players.map((p) => ({ ...p, is_substitute: false })),
-        ...(substitute && substitute.player_name ? [{ ...substitute, is_substitute: true }] : []),
       ],
     };
     const form = new FormData();
@@ -250,7 +248,7 @@ export default function RegisterPage() {
         </div>
         <StepBar step={1} />
         <p className="mt-4 text-center text-sm text-zinc-500">
-          Only the <strong className="text-zinc-300">team captain</strong> registers. We verify your
+          Only the <strong className="text-zinc-300">team leader</strong> registers. We verify your
           email with an OTP — no password account to create.
         </p>
         <form onSubmit={startOtp} className="card mt-8 space-y-4 p-6">
@@ -260,7 +258,7 @@ export default function RegisterPage() {
             </p>
           )}
           <div>
-            <label className="label">Captain real name</label>
+            <label className="label">Team Leader</label>
             <input
               className="input"
               placeholder="REAL_NAME"
@@ -300,8 +298,9 @@ export default function RegisterPage() {
       </div>
       <StepBar step={2} />
       <ul className="card mt-4 list-inside list-disc p-4 text-sm text-zinc-400">
-        <li>Only the captain submits this form.</li>
+        <li>Only the team leader submits this form.</li>
         <li>Keep the team name short (max 30 characters).</li>
+        <li>Team names and gamer tags must not be offensive.</li>
         <li>Use a valid phone number — organizers will contact you on it.</li>
         <li>Real names only for all players.</li>
       </ul>
@@ -334,10 +333,11 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="label">Captain phone</label>
+            <label className="label">Team Leader&apos;s Phone Number</label>
             <input
               className="input"
               required
+              placeholder="+94"
               value={team.phone}
               onChange={(e) => setTeam({ ...team, phone: e.target.value })}
             />
@@ -365,7 +365,7 @@ export default function RegisterPage() {
             <label className="label">WhatsApp</label>
             <input
               className="input"
-              placeholder="+91…"
+              placeholder="+94"
               value={team.whatsapp}
               onChange={(e) => setTeam({ ...team, whatsapp: e.target.value })}
             />
@@ -374,7 +374,7 @@ export default function RegisterPage() {
 
         <div>
           <div className="flex items-center justify-between">
-            <label className="label !mb-0">Players (up to 5, plus you as captain)</label>
+            <label className="label !mb-0">Players (up to 5, plus you as team leader)</label>
             {players.length < 5 && (
               <button
                 type="button"
@@ -419,34 +419,6 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="label !mb-0">Substitute (optional)</label>
-            <button
-              type="button"
-              className="text-sm font-semibold text-ember-400 hover:text-ember-500"
-              onClick={() => setSubstitute(substitute ? null : emptyPlayer(true))}
-            >
-              {substitute ? "Remove substitute" : "+ Add substitute"}
-            </button>
-          </div>
-          {substitute && (
-            <div className="mt-2 flex gap-2">
-              <input
-                className="input"
-                placeholder="Substitute real name"
-                value={substitute.player_name}
-                onChange={(e) => setSubstitute({ ...substitute, player_name: e.target.value })}
-              />
-              <input
-                className="input"
-                placeholder="In-game ID"
-                value={substitute.game_id}
-                onChange={(e) => setSubstitute({ ...substitute, game_id: e.target.value })}
-              />
-            </div>
-          )}
-        </div>
 
         <label className="flex items-start gap-3 text-sm text-zinc-400">
           <input type="checkbox" className="mt-1" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
@@ -456,7 +428,10 @@ export default function RegisterPage() {
           </span>
         </label>
 
-        <button className="btn-primary w-full" disabled={busy}>
+        <button
+          className="btn-primary w-full disabled:bg-zinc-700 disabled:text-zinc-400 disabled:shadow-none"
+          disabled={busy || !agreed}
+        >
           {busy ? "Submitting…" : "Submit team registration"}
         </button>
       </form>

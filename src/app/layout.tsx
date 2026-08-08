@@ -1,21 +1,8 @@
 import type { Metadata } from "next";
-import { Archivo_Narrow, JetBrains_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-const display = Archivo_Narrow({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-display",
-});
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-mono",
-});
-const body = Inter({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-body" });
 
 export const metadata: Metadata = {
   title: "CODFEST 2026 — Call of Duty 4 Tournament",
@@ -25,11 +12,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${mono.variable} ${body.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist+Mono:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <Providers>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pt-16">{children}</main>
           <Footer />
         </Providers>
       </body>

@@ -32,7 +32,6 @@ export default function Footer() {
             <li><Link className="hover:text-ember-400" href="/contact">Contact HQ</Link></li>
             <li><a className="hover:text-ember-400" href="https://discord.gg" target="_blank" rel="noreferrer">Discord</a></li>
             <li><a className="hover:text-ember-400" href="https://wa.me" target="_blank" rel="noreferrer">WhatsApp</a></li>
-            <li><Link className="hover:text-ember-400" href="/faq">Support</Link></li>
           </ul>
         </div>
       </div>

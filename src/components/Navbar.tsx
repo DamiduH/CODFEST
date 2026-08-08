@@ -13,7 +13,6 @@ const LINKS = [
   { href: "/bracket", label: "Bracket" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/rules", label: "Rules" },
-  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -29,8 +28,8 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-night-700 bg-night-page/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+    <header className="absolute left-0 top-0 z-50 w-full bg-transparent">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
         <Link href="/" className="group flex items-center gap-3">
           <span className="font-display text-2xl font-bold tracking-tight text-white transition-colors group-hover:text-ember-400">
             CODFEST <span className="text-ember-600">2026</span>
