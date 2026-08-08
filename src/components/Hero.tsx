@@ -3,14 +3,13 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import Countdown from "@/components/Countdown";
 
 export default function Hero({
   liveCount,
   nextMatchTime,
-  registrationOpen,
-  prizePool,
   stats,
 }: {
   liveCount: number;
@@ -20,70 +19,56 @@ export default function Hero({
   stats: { teams: number; players: number; played: number };
 }) {
   const countdownTarget =
-    nextMatchTime ?? process.env.NEXT_PUBLIC_TOURNAMENT_START ?? new Date().toISOString();
+    nextMatchTime ??
+    process.env.NEXT_PUBLIC_TOURNAMENT_START ??
+    new Date().toISOString();
 
   return (
     <>
       {/* ============ HERO ============ */}
-      <section className="relative overflow-hidden border-b border-night-700">
+      <section className="relative -mt-16 h-screen overflow-hidden border-b border-night-700">
         {/* Radar scan line overlay */}
-        <div className="radar-overlay" />
+        <div className="radar-overlay z-10" />
 
         {/* Background video + tactical overlays */}
-        <div className="absolute inset-0 bg-night-page">
+        <div className="absolute inset-0 z-0 overflow-hidden bg-night-page">
           <video
             autoPlay
             loop
             muted
             playsInline
-            className="h-full w-full object-cover opacity-60"
+            className="absolute inset-0 h-full w-full object-cover opacity-60"
           >
             <source
               src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/hero-bg.mp4"
               type="video/mp4"
             />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-night-page/40 via-night-page/10 to-night-page" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-ember-600/10" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-b from-night-page/40 via-night-page/10 to-night-page" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-b from-transparent via-transparent to-ember-600/10" />
         </div>
 
         {/* HUD decorations with floating animation */}
         <motion.p
           animate={{ opacity: [0.5, 0.9, 0.5] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute left-8 top-8 font-mono text-xs text-ember-600"
+          className="absolute left-8 top-20 z-20 font-mono text-xs text-ember-600"
         >
           SYS.ON // COORD.0192.44
         </motion.p>
-        <div className="absolute bottom-8 right-8 flex items-center gap-2 opacity-80">
+        <div className="absolute bottom-8 right-8 z-20 flex items-center gap-2 opacity-80">
           <span className="h-2 w-2 rounded-full bg-ember-600 animate-pulseLive" />
-          <span className="font-mono text-xs text-ember-600 tracking-wider">REC // ACTIVE</span>
+          <span className="font-mono text-xs text-ember-600 tracking-wider">
+            REC // ACTIVE
+          </span>
         </div>
-        <div className="absolute left-4 top-1/2 hidden -translate-y-1/2 flex-col gap-1 md:flex">
+        <div className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-1 md:flex">
           <span className="h-8 w-1 bg-ember-600/30 animate-pulse" />
           <span className="h-12 w-1 bg-ember-600/60" />
           <span className="h-4 w-1 bg-ember-600" />
         </div>
 
-        <div className="relative mx-auto flex min-h-[640px] max-w-7xl flex-col items-center justify-center px-4 py-24 text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-2 border border-ember-600/40 bg-night-page/90 px-4 py-1.5 shadow-glowSm transition-colors hover:border-ember-600"
-          >
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" className="animate-spin-slow">
-              <path
-                d="M5.8 12.78V11.6a5.4 5.4 0 0 1-4.63-4.63H0V5.8h1.17A5.4 5.4 0 0 1 5.8 1.17V0h1.17v1.17a5.4 5.4 0 0 1 4.63 4.63h1.17v1.17H11.6a5.4 5.4 0 0 1-4.63 4.63v1.18H5.8Zm.59-2.3a4.08 4.08 0 1 0 0-8.17 4.08 4.08 0 0 0 0 8.16Zm0-1.76a2.33 2.33 0 1 1 0-4.67 2.33 2.33 0 0 1 0 4.67Z"
-                fill="#71E000"
-              />
-            </svg>
-            <span className="font-mono text-sm font-bold tracking-[0.1em] text-ember-600">
-              TOURNAMENT SYSTEM ONLINE
-            </span>
-          </motion.div>
-
+        <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col items-center justify-center px-4 pb-16 pt-20 text-center">
           {liveCount > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -5 }}
@@ -101,19 +86,17 @@ export default function Hero({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-6 font-display text-6xl font-extrabold leading-none tracking-tight text-white [text-shadow:0_0_20px_rgba(113,224,0,0.25)] md:text-8xl"
+            className="mt-6 flex w-full justify-center"
           >
-            CODFEST <span className="text-ember-600">2026</span>
+            <Image
+              src="/logo.png"
+              alt="CODFEST 2026 — Intra-Departmental E-Sports Tournament"
+              width={628}
+              height={225}
+              priority
+              className="h-auto w-[min(88vw,560px)] drop-shadow-[0_0_20px_rgba(113,224,0,0.2)]"
+            />
           </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="mt-4 max-w-2xl font-display text-2xl font-bold uppercase leading-tight tracking-[0.1em] text-zinc-300 md:text-4xl"
-          >
-            Call of Duty 4 Esports Tournament
-          </motion.p>
 
           <motion.p
             initial={{ opacity: 0 }}
@@ -121,48 +104,39 @@ export default function Hero({
             transition={{ duration: 0.5, delay: 0.35 }}
             className="mt-4 font-body text-base uppercase tracking-[0.1em] text-zinc-200 opacity-90 md:text-lg"
           >
-            Assemble your squad. Enter the battlefield. Claim the title.
+            Assemble your squad. <br className="md:hidden block" />
+            Enter the battlefield. <br />
+            <span className="font-semibold ">Claim the title.</span>
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-5 flex flex-wrap items-center justify-center gap-3"
-          >
-            <motion.span
-              whileHover={{ scale: 1.05 }}
-              className="border border-ember-600/50 bg-ember-600/10 px-4 py-1.5 font-mono text-xs tracking-[0.1em] text-ember-600 transition-colors hover:border-ember-600"
-            >
-              PRIZE POOL: {prizePool}
-            </motion.span>
-            <motion.span
-              whileHover={{ scale: 1.05 }}
-              className={`border px-4 py-1.5 font-mono text-xs tracking-[0.1em] transition-colors ${
-                registrationOpen
-                  ? "border-ember-500/50 bg-ember-600/10 text-ember-500 hover:border-ember-500"
-                  : "border-red-500/40 bg-red-500/10 text-red-300"
-              }`}
-            >
-              REGISTRATION: {registrationOpen ? "OPEN" : "CLOSED"}
-            </motion.span>
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.48 }}
-            className="mt-10 flex flex-wrap justify-center gap-4"
+            className="mt-6 flex flex-wrap justify-center gap-4"
           >
             <motion.div
+              className="w-full sm:w-auto"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
             >
               <Link
                 href="/register"
-                className="btn-primary !px-10 !py-4 font-display text-2xl font-bold tracking-[0.05em] text-ember-900 shadow-glowLg"
+                className="btn-primary w-full !px-10 !py-3 font-display text-2xl font-bold tracking-[0.05em] text-ember-900 shadow-glowLg"
               >
                 REGISTER YOUR TEAM
+              </Link>
+            </motion.div>
+            <motion.div
+              className="w-full sm:w-auto"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+            >
+              <Link
+                href="/contact"
+                className="btn-clipped-outline inline-flex w-full items-center justify-center border border-white px-10 py-3 font-display text-2xl font-bold tracking-[0.05em] text-white transition-colors duration-300 hover:bg-white hover:text-night-page"
+              >
+                CONTACT US
               </Link>
             </motion.div>
           </motion.div>
@@ -210,7 +184,9 @@ export default function Hero({
                 </span>
               </div>
               <h2 className="mt-2 font-display text-2xl font-bold tracking-[0.05em] text-white md:text-3xl">
-                {nextMatchTime ? "NEXT MATCH DEPLOYMENT" : "TOURNAMENT DEPLOYMENT BEGINS"}
+                {nextMatchTime
+                  ? "NEXT MATCH DEPLOYMENT"
+                  : "TOURNAMENT DEPLOYMENT BEGINS"}
               </h2>
             </div>
             <Countdown target={countdownTarget} />
@@ -238,7 +214,9 @@ export default function Hero({
               className="card relative p-5 transition-all duration-300 md:p-6"
             >
               <span className="hud-note absolute right-2 top-2">{tag}</span>
-              <div className="font-display text-4xl font-bold text-white md:text-6xl">{value}</div>
+              <div className="font-display text-4xl font-bold text-white md:text-6xl">
+                {value}
+              </div>
               <div className="mt-2 font-mono text-[10px] tracking-[0.1em] text-zinc-300 md:text-xs">
                 {label}
               </div>

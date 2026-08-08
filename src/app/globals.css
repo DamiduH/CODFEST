@@ -4,6 +4,9 @@
 
 :root {
   color-scheme: dark;
+  --font-display: "Bebas Neue";
+  --font-mono: "Geist Mono";
+  --font-body: "Roboto";
 }
 
 body {
@@ -25,6 +28,14 @@ body {
       font-mono text-sm font-bold uppercase tracking-[0.1em] text-ember-900 transition-all duration-300
       hover:bg-ember-400 hover:shadow-glowLg hover:scale-[1.02] active:scale-[0.98]
       disabled:opacity-50 disabled:pointer-events-none;
+    clip-path: polygon(
+      16px 0,
+      100% 0,
+      100% calc(100% - 16px),
+      calc(100% - 16px) 100%,
+      0 100%,
+      0 16px
+    );
   }
 
   /* Shimmer line effect on primary buttons */
@@ -41,6 +52,36 @@ body {
       disabled:opacity-50 disabled:pointer-events-none;
   }
 
+  .btn-clipped-outline {
+    @apply relative overflow-hidden;
+    clip-path: polygon(
+      16px 0,
+      100% 0,
+      100% calc(100% - 16px),
+      calc(100% - 16px) 100%,
+      0 100%,
+      0 16px
+    );
+  }
+
+  .btn-clipped-outline::before,
+  .btn-clipped-outline::after {
+    content: "";
+    @apply pointer-events-none absolute z-10 h-px bg-white;
+    width: 21.92px;
+    transform: rotate(-45deg);
+    transform-origin: center;
+  }
+
+  .btn-clipped-outline::before {
+    left: -2.71px;
+    top: 7.75px;
+  }
+
+  .btn-clipped-outline::after {
+    bottom: 7.75px;
+    right: -2.71px;
+  }
   .input {
     @apply w-full border border-night-700 border-b-2 bg-[#101511] px-3.5 py-2.5
       font-mono text-sm text-zinc-100 placeholder:text-zinc-500 placeholder:uppercase
@@ -53,7 +94,7 @@ body {
   }
 
   .section-title {
-    @apply font-display text-3xl md:text-4xl font-bold uppercase tracking-tight text-white;
+    @apply font-display text-3xl md:text-4xl font-bold uppercase tracking-[0.06em] text-white;
   }
 
   .hud-note {
@@ -95,4 +136,13 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #71e000;
+}
+
+.contact-card-texture {
+  background-color: rgba(38, 78, 24, 0.3);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(113, 224, 0, 0.09) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at 20% 20%, rgba(113, 224, 0, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(9, 35, 14, 0.75), rgba(17, 42, 20, 0.2));
+  mix-blend-mode: screen;
 }
