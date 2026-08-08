@@ -45,11 +45,16 @@ export default function CaptainDashboard() {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <h1 className="section-title">Team dashboard</h1>
-        <p className="mt-3 text-zinc-400">Sign in with your captain email OTP to manage your team.</p>
-        <Link href="/login" className="btn-primary mt-6">OTP sign-in</Link>
+        <p className="mt-3 text-zinc-400">
+          Access your team dashboard by verifying your captain email via OTP.
+        </p>
+        <Link href="/register" className="btn-primary mt-6">
+          Captain OTP access
+        </Link>
       </div>
     );
   }
+
 
   if (!team) {
     return (

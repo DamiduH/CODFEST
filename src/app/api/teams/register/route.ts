@@ -8,7 +8,9 @@ import { emitToAdmins } from "@/lib/socket";
 
 const playerSchema = z.object({
   player_name: z.string().min(1).max(50),
-  game_id: z.string().min(1).max(50),
+  email: z.string().email().optional().default(""),
+  phone: z.string().max(20).optional().default(""),
+  game_id: z.string().max(50).optional().default(""),
   is_substitute: z.boolean().default(false),
 });
 
@@ -18,9 +20,7 @@ const schema = z.object({
   email: z.string().email(),
   discord: z.string().max(60).optional().default(""),
   whatsapp: z.string().max(20).optional().default(""),
-  players: z.array(playerSchema).min(1).max(7)
-    .refine((p) => p.filter((x) => !x.is_substitute).length <= 6, "Max 6 main players (5 + captain)")
-    .refine((p) => p.filter((x) => x.is_substitute).length <= 1, "Only one substitute allowed"),
+  players: z.array(playerSchema).min(1).max(5),
   agreed: z.literal(true),
 });
 

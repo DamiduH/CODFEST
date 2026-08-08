@@ -58,6 +58,9 @@ export interface Match {
   submission_team2: ScoreSubmission | null;
   final_score1: number | null;
   final_score2: number | null;
+  /** Live in-progress score pushed by the admin during a running match. */
+  live_score1: number | null;
+  live_score2: number | null;
   winner_id: string | null;
   resolved_by: string | null;
   resolved_at: string | null;
