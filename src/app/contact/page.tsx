@@ -1,35 +1,115 @@
-export default function ContactPage() {
-  const channels = [
-    { label: "Phone", value: "+91 98765 43210", href: "tel:+919876543210" },
-    { label: "Email", value: "organizers@codfest.gg", href: "mailto:organizers@codfest.gg" },
-    { label: "Discord", value: "discord.gg/codfest", href: "https://discord.gg" },
-    { label: "WhatsApp", value: "+91 98765 43210", href: "https://wa.me/919876543210" },
-  ];
+import Image from "next/image";
 
+const contacts = [
+  { name: "Contact Person 01", code: "CR-01" },
+  { name: "Contact Person 02", code: "CR-02" },
+] as const;
+
+const phone = { value: "+94 76 293 4155", href: "tel:+94762934155" };
+const email = { value: "organizers@codfest.gg", href: "mailto:organizers@codfest.gg" };
+
+function PhoneIcon() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="section-title">Contact the organizers</h1>
-      <p className="mt-2 text-sm text-zinc-500">
-        For disputes during a match, use Discord — it&apos;s the fastest channel and is monitored
-        throughout every match day.
-      </p>
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
+      <path
+        d="M7.2 3.5 9.6 8l-2.2 1.8c1.1 2.6 3.2 4.7 5.8 5.8l1.8-2.2 4.5 2.4-.8 3.3c-.2.8-.9 1.4-1.8 1.4C9.5 20.5 3.5 14.5 3.5 7.1c0-.9.6-1.6 1.4-1.8l2.3-.8Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {channels.map((c) => (
-          <a key={c.label} href={c.href} target="_blank" rel="noreferrer" className="card p-5 transition hover:border-ember-600/50">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">{c.label}</div>
-            <div className="mt-1 font-semibold text-zinc-200">{c.value}</div>
-          </a>
-        ))}
-      </div>
+function EmailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
+      <path d="M3.5 6.5h17v12h-17v-12Z" stroke="currentColor" strokeWidth="1.6" />
+      <path d="m4.5 7.5 7.5 6 7.5-6" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
 
-      <div className="card mt-6 p-5">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Location</div>
-        <p className="mt-1 text-sm text-zinc-300">
-          CODFEST is an online tournament — matches are played from home. Finals may be casted
-          live on stream; links are posted on the Announcements page.
+export default function ContactPage() {
+  return (
+    <main className="mx-auto max-w-5xl px-4 py-12 md:py-16">
+      <div className="border-l-4 border-l-ember-400 pl-4">
+        <h1 className="section-title">Contact the organizers</h1>
+        <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
+          // OPEN COMMUNICATION CHANNELS
         </p>
       </div>
-    </div>
+      <p className="mt-5 max-w-2xl text-sm leading-relaxed text-zinc-400">
+        Contact tournament operations by phone or email for registration support, match-day
+        questions, and official assistance.
+      </p>
+
+      <div className="mx-auto mt-8 grid max-w-4xl gap-5">
+        {contacts.map((contact) => (
+          <article
+            key={contact.code}
+            className="group relative isolate grid min-h-[520px] grid-rows-[280px_1fr] overflow-hidden border border-white/25 bg-night-900 transition duration-500 hover:-translate-y-1 hover:border-ember-500/80 hover:shadow-glowSm md:min-h-[280px] md:grid-cols-[38%_1fr] md:grid-rows-none"
+            style={{
+              clipPath:
+                "polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)",
+            }}
+          >
+            <div className="relative min-h-full overflow-hidden border-b border-white/10 md:border-b-0 md:border-r">
+              <Image
+                src="/Contact Person.png"
+                alt="Contact person placeholder"
+                fill
+                sizes="(min-width: 768px) 340px, 100vw"
+                className="object-cover object-[center_25%] transition duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-night-900/75" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10" />
+              <div className="contact-card-texture absolute inset-0 opacity-70 transition-opacity duration-500 group-hover:opacity-0" />
+            </div>
+
+            <div className="relative flex min-w-0 flex-col justify-center p-4 sm:p-6 md:p-8">
+              <span className="absolute right-4 top-4 border border-ember-500/60 bg-black/70 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.16em] text-ember-400">
+                {contact.code}
+              </span>
+
+              <p className="pr-16 font-display text-2xl tracking-[0.06em] text-white sm:text-3xl">
+                {contact.name}
+              </p>
+              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-ember-400 sm:text-[10px] sm:tracking-[0.2em]">
+                Tournament Operations
+              </p>
+
+              <div className="mt-5 space-y-2">
+                <a
+                  href={phone.href}
+                  className="flex items-center gap-3 border border-white/10 bg-black/35 p-2.5 transition hover:border-ember-500/60 hover:bg-black/60 sm:p-3"
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center border border-ember-500/60 text-ember-400">
+                    <PhoneIcon />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-mono text-[9px] uppercase tracking-[0.18em] text-ember-400">Phone</span>
+                    <span className="block font-display text-lg tracking-[0.05em] text-white sm:text-xl">{phone.value}</span>
+                  </span>
+                </a>
+
+                <a
+                  href={email.href}
+                  className="flex items-center gap-3 border border-white/10 bg-black/35 p-2.5 transition hover:border-ember-500/60 hover:bg-black/60 sm:p-3"
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center border border-ember-500/60 text-ember-400">
+                    <EmailIcon />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-mono text-[9px] uppercase tracking-[0.18em] text-ember-400">Email</span>
+                    <span className="block break-all font-display text-base tracking-[0.04em] text-white sm:text-xl">{email.value}</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </main>
   );
 }

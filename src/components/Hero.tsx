@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import Countdown from "@/components/Countdown";
 
@@ -85,19 +86,17 @@ export default function Hero({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-6 font-display text-6xl font-extrabold leading-none tracking-[0.06em] text-white [text-shadow:0_0_20px_rgba(113,224,0,0.25)] md:text-8xl"
+            className="mt-6 flex w-full justify-center"
           >
-            CODFEST <span className="text-ember-600">2026</span>
+            <Image
+              src="/logo.png"
+              alt="CODFEST 2026 — Intra-Departmental E-Sports Tournament"
+              width={628}
+              height={225}
+              priority
+              className="h-auto w-[min(88vw,560px)] drop-shadow-[0_0_20px_rgba(113,224,0,0.2)]"
+            />
           </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="mt-4 max-w-2xl font-display text-base font-semibold uppercase leading-tight tracking-[0.1em] text-zinc-300 md:text-4xl"
-          >
-            Call of Duty Esports Tournament
-          </motion.p>
 
           <motion.p
             initial={{ opacity: 0 }}
@@ -105,31 +104,37 @@ export default function Hero({
             transition={{ duration: 0.5, delay: 0.35 }}
             className="mt-4 font-body text-base uppercase tracking-[0.1em] text-zinc-200 opacity-90 md:text-lg"
           >
-            Assemble your squad. Enter the battlefield. Claim the title.
+            Assemble your squad. <br className="md:hidden block" />
+            Enter the battlefield. <br />
+            <span className="font-semibold ">Claim the title.</span>
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.48 }}
-            className="mt-10 flex flex-wrap justify-center gap-4"
+            className="mt-6 flex flex-wrap justify-center gap-4"
           >
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+            <motion.div
+              className="w-full sm:w-auto"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+            >
               <Link
                 href="/register"
-                className="btn-primary !px-10 !py-3 font-display text-2xl font-bold tracking-[0.05em] text-ember-900 shadow-glowLg"
+                className="btn-primary w-full !px-10 !py-3 font-display text-2xl font-bold tracking-[0.05em] text-ember-900 shadow-glowLg"
               >
                 REGISTER YOUR TEAM
               </Link>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+            <motion.div
+              className="w-full sm:w-auto"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+            >
               <Link
                 href="/contact"
-                className="btn-clipped-outline inline-flex items-center justify-center border border-white px-10 py-3 font-display text-2xl font-bold tracking-[0.05em] text-white transition-colors duration-300 hover:bg-white hover:text-night-page"
-                style={{
-                  clipPath:
-                    "polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)",
-                }}
+                className="btn-clipped-outline inline-flex w-full items-center justify-center border border-white px-10 py-3 font-display text-2xl font-bold tracking-[0.05em] text-white transition-colors duration-300 hover:bg-white hover:text-night-page"
               >
                 CONTACT US
               </Link>

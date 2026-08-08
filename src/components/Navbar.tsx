@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LINKS = [
@@ -20,20 +21,41 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const updateNavbar = () => setScrolled(window.scrollY > 12);
+    updateNavbar();
+    window.addEventListener("scroll", updateNavbar, { passive: true });
+    return () => window.removeEventListener("scroll", updateNavbar);
+  }, []);
   const role = session?.user?.role;
 
   const roleLinks = [
     ...(role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
-    ...(role === "team_captain" ? [{ href: "/dashboard", label: "My Squad" }] : []),
+    ...(role === "team_captain"
+      ? [{ href: "/dashboard", label: "My Squad" }]
+      : []),
   ];
 
   return (
-    <header className="absolute left-0 top-0 z-50 w-full bg-transparent">
+    <header
+      className={`fixed left-0 top-0 z-50 w-full border-b transition-all duration-300 ${
+        scrolled
+          ? "border-white/10 bg-night-page/75 shadow-lg backdrop-blur-md"
+          : "border-transparent bg-transparent"
+      }`}
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
         <Link href="/" className="group flex items-center gap-3">
-          <span className="font-display text-2xl font-bold tracking-tight text-white transition-colors group-hover:text-ember-400">
-            CODFEST <span className="text-ember-600">2026</span>
-          </span>
+          <Image
+            src="/NavBarLogo.png"
+            alt="CODFEST 2026"
+            width={628}
+            height={225}
+            priority
+            className="h-auto w-32 transition-opacity group-hover:opacity-80 sm:w-36"
+          />
           <span className="hidden border border-ember-600/30 bg-ember-600/10 px-1.5 py-0.5 font-mono text-[10px] text-ember-600 transition-colors group-hover:border-ember-600 md:inline">
             [OP:ACTIVE]
           </span>
@@ -47,7 +69,9 @@ export default function Navbar() {
                 key={l.href}
                 href={l.href}
                 className={`relative px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] transition-colors ${
-                  active ? "text-ember-500 font-bold" : "text-zinc-300 hover:text-white"
+                  active
+                    ? "text-ember-500 font-bold"
+                    : "text-zinc-300 hover:text-white"
                 }`}
               >
                 {l.label}
@@ -110,8 +134,19 @@ export default function Navbar() {
           onClick={() => setOpen(!open)}
           aria-label="Toggle menu"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            {open ? (
+              <path d="M6 6l12 12M18 6L6 18" />
+            ) : (
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            )}
           </svg>
         </button>
       </div>

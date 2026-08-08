@@ -54,23 +54,33 @@ body {
 
   .btn-clipped-outline {
     @apply relative overflow-hidden;
+    clip-path: polygon(
+      16px 0,
+      100% 0,
+      100% calc(100% - 16px),
+      calc(100% - 16px) 100%,
+      0 100%,
+      0 16px
+    );
   }
 
   .btn-clipped-outline::before,
   .btn-clipped-outline::after {
     content: "";
-    @apply pointer-events-none absolute z-10 h-px w-[22px] bg-white;
+    @apply pointer-events-none absolute z-10 h-px bg-white;
+    width: 21.92px;
     transform: rotate(-45deg);
+    transform-origin: center;
   }
 
   .btn-clipped-outline::before {
-    left: -3px;
-    top: 8px;
+    left: -2.71px;
+    top: 7.75px;
   }
 
   .btn-clipped-outline::after {
-    bottom: 8px;
-    right: -3px;
+    bottom: 7.75px;
+    right: -2.71px;
   }
   .input {
     @apply w-full border border-night-700 border-b-2 bg-[#101511] px-3.5 py-2.5
@@ -126,4 +136,13 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #71e000;
+}
+
+.contact-card-texture {
+  background-color: rgba(38, 78, 24, 0.3);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(113, 224, 0, 0.09) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at 20% 20%, rgba(113, 224, 0, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(9, 35, 14, 0.75), rgba(17, 42, 20, 0.2));
+  mix-blend-mode: screen;
 }
