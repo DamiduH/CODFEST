@@ -25,7 +25,6 @@ export default function Navbar() {
 
   const roleLinks = [
     ...(role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
-    ...(role === "team_captain" ? [{ href: "/dashboard", label: "My Squad" }] : []),
   ];
 
   return (
@@ -85,7 +84,7 @@ export default function Navbar() {
               </Link>
             );
           })}
-          {session ? (
+          {role === "admin" ? (
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -135,7 +134,7 @@ export default function Navbar() {
                 {l.label}
               </Link>
             ))}
-            {session ? (
+            {role === "admin" ? (
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
                 className="mt-2 block w-full px-3 py-2.5 text-left font-mono text-xs uppercase tracking-[0.1em] text-zinc-500 hover:text-zinc-300"
