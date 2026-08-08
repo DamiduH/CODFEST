@@ -1,7 +1,11 @@
 'use client';
 
+// Tell Next.js: never statically pre-render this page.
+// It is 100% client-side (live Pusher subscription) and has no server data.
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
-import { pusherClient } from '@/lib/pusher';
+import { getPusherClient } from '@/lib/pusher';
 
 interface KillEvent {
   attacker: string;
@@ -14,17 +18,16 @@ export default function ScoreboardPage() {
   const [killFeed, setKillFeed] = useState<KillEvent[]>([]);
 
   useEffect(() => {
-    // Subscribe to the channel broadcasted from local script
-    const channel = pusherClient.subscribe('cod4-server');
+    // Pusher client is only created here — safely inside useEffect (browser only).
+    const pusher  = getPusherClient();
+    const channel = pusher.subscribe('cod4-server');
 
-    // Listen for 'score-update' events
     channel.bind('score-update', (data: KillEvent) => {
-      setKillFeed((prevEvents) => [data, ...prevEvents.slice(0, 19)]); // Keep last 20 events
+      setKillFeed((prev) => [data, ...prev.slice(0, 19)]); // keep last 20
     });
 
-    // Cleanup subscription on unmount
     return () => {
-      pusherClient.unsubscribe('cod4-server');
+      pusher.unsubscribe('cod4-server');
     };
   }, []);
 
