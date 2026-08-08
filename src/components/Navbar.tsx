@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/matches", label: "Matches" },
   { href: "/bracket", label: "Bracket" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/scoreboard", label: "Live Score" },
   { href: "/rules", label: "Rules" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
