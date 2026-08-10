@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-/** Admin-only sign-in: password credentials OR Google OAuth. */
-export default function AdminLoginPage() {
+/** Inner component — needs Suspense because it reads search params. */
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const googleError = searchParams.get("error") === "google_not_admin";
@@ -128,5 +128,14 @@ export default function AdminLoginPage() {
         </a>
       </p>
     </div>
+  );
+}
+
+/** Admin-only sign-in page. Suspense is required for useSearchParams(). */
+export default function AdminLoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
