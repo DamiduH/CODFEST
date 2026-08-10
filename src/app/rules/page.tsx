@@ -57,7 +57,7 @@ export default function RulesPage() {
       <div>
         <h1 className="section-title">Rules and Regulations</h1>
         <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-zinc-500">
-          // Search &amp; Destroy — Tournament Rules
+          // Tournament Rules
         </p>
       </div>
 
@@ -106,7 +106,7 @@ export default function RulesPage() {
                     {section === "Match Format" && (
                       <div className="space-y-4">
                         <div className="flex flex-wrap gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em]">
-                          {["5v5", "Promod LIVE", "LAN", "Search & Destroy"].map((item) => (
+                          {["5v5", "Promod LIVE", "LAN"].map((item) => (
                             <span key={item} className="border border-ember-600/50 bg-ember-600/10 px-2.5 py-1 text-ember-400">
                               {item}
                             </span>

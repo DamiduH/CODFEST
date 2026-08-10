@@ -1,12 +1,17 @@
-import Image from "next/image";
-
 const contacts = [
-  { name: "Contact Person 01", code: "CR-01" },
-  { name: "Contact Person 02", code: "CR-02" },
+  {
+    name: "Savindu Mihiran",
+    email: "savindumihiran12345@gmail.com",
+    code: "CR-01",
+  },
+  {
+    name: "Tharu Silva",
+    email: "shehantharu2095@gmail.com",
+    code: "CR-02",
+  },
 ] as const;
 
 const phone = { value: "+94 76 293 4155", href: "tel:+94762934155" };
-const email = { value: "organizers@codfest.gg", href: "mailto:organizers@codfest.gg" };
 
 function PhoneIcon() {
   return (
@@ -48,25 +53,12 @@ export default function ContactPage() {
         {contacts.map((contact) => (
           <article
             key={contact.code}
-            className="group relative isolate grid min-h-[520px] grid-rows-[280px_1fr] overflow-hidden border border-white/25 bg-night-900 transition duration-500 hover:-translate-y-1 hover:border-ember-500/80 hover:shadow-glowSm md:min-h-[280px] md:grid-cols-[38%_1fr] md:grid-rows-none"
+            className="group relative isolate min-h-[280px] overflow-hidden border border-white/25 bg-night-900 transition duration-500 hover:-translate-y-1 hover:border-ember-500/80 hover:shadow-glowSm"
             style={{
               clipPath:
                 "polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)",
             }}
           >
-            <div className="relative min-h-full overflow-hidden border-b border-white/10 md:border-b-0 md:border-r">
-              <Image
-                src="/Contact Person.png"
-                alt="Contact person placeholder"
-                fill
-                sizes="(min-width: 768px) 340px, 100vw"
-                className="object-cover object-[center_25%] transition duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-night-900/75" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10" />
-              <div className="contact-card-texture absolute inset-0 opacity-70 transition-opacity duration-500 group-hover:opacity-0" />
-            </div>
-
             <div className="relative flex min-w-0 flex-col justify-center p-4 sm:p-6 md:p-8">
               <span className="absolute right-4 top-4 border border-ember-500/60 bg-black/70 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.16em] text-ember-400">
                 {contact.code}
@@ -94,7 +86,7 @@ export default function ContactPage() {
                 </a>
 
                 <a
-                  href={email.href}
+                  href={`mailto:${contact.email}`}
                   className="flex items-center gap-3 border border-white/10 bg-black/35 p-2.5 transition hover:border-ember-500/60 hover:bg-black/60 sm:p-3"
                 >
                   <span className="grid h-9 w-9 shrink-0 place-items-center border border-ember-500/60 text-ember-400">
@@ -102,7 +94,7 @@ export default function ContactPage() {
                   </span>
                   <span className="min-w-0">
                     <span className="block font-mono text-[9px] uppercase tracking-[0.18em] text-ember-400">Email</span>
-                    <span className="block break-all font-display text-base tracking-[0.04em] text-white sm:text-xl">{email.value}</span>
+                    <span className="block break-all font-display text-base tracking-[0.04em] text-white sm:text-xl">{contact.email}</span>
                   </span>
                 </a>
               </div>
