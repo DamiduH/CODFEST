@@ -147,8 +147,8 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
     if (!agreed) return setError("You must accept the rules and code of conduct");
-    if (members.some((m) => !m.member_name || !m.phone)) {
-      return setError("Every member needs a name and mobile number");
+    if (members.some((m) => !m.member_name)) {
+      return setError("Every player needs a name");
     }
     setBusy(true);
 
