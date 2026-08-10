@@ -43,18 +43,18 @@ export default function AnimatedHomeContent({
           whileHover={{ y: -6, borderColor: "rgba(113, 224, 0, 0.8)" }}
           className="card relative p-6 transition-all duration-300"
         >
-          <span className="hud-note absolute right-2 top-2">DAT.01</span>
-          <p className="font-mono text-xs tracking-wide text-zinc-300">SCORE VERIFICATION</p>
+          <span className="hud-note absolute right-2 top-2">REG.01</span>
+          <p className="font-mono text-xs tracking-wide text-zinc-300">COMBAT PROTOCOL</p>
           <h3 className="mt-1 font-display text-2xl font-bold tracking-[0.05em] text-white">
-            DUAL-SUBMISSION
+            RULES &amp; REGULATIONS
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            Matches run on your own PCs — both captains report the final score with a
-            screenshot. Matching reports confirm instantly; conflicts go to admin review.
+            Know the match format, weapon restrictions, map rules, technical procedures,
+            and fair-play requirements before entering the server.
           </p>
           <motion.div whileHover={{ x: 4 }} className="inline-block mt-4">
             <Link href="/rules" className="font-mono text-xs uppercase tracking-[0.1em] text-ember-400 hover:text-ember-600">
-              Read protocol →
+              View rulebook →
             </Link>
           </motion.div>
         </motion.div>
@@ -85,7 +85,7 @@ export default function AnimatedHomeContent({
             ))}
           </div>
           <p className="mt-3 font-mono text-[11px] text-zinc-500">
-            5v5 S&D // PROMOD LIVE // BO1 (FINAL BO3)
+            5v5 S&D // PROMOD LIVE
           </p>
         </motion.div>
 
@@ -101,11 +101,11 @@ export default function AnimatedHomeContent({
           <span className="hud-note absolute right-2 top-2">SQD.03</span>
           <p className="font-mono text-xs tracking-wide text-zinc-300">TEAM COMPOSITION</p>
           <h3 className="mt-1 font-display text-2xl font-bold tracking-[0.05em] text-white">
-            5 OPERATORS
+            5 PLAYERS
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            5 players + 1 captain (captain may play) + optional substitute. Only the
-            captain registers the squad, and only rostered players deploy.
+            Each team fields exactly 5 players per match. Only registered team members may
+            compete, and substitutions are not allowed during an active match.
           </p>
           <motion.div whileHover={{ x: 4 }} className="inline-block mt-4">
             <Link href="/register" className="font-mono text-xs uppercase tracking-[0.1em] text-ember-400 hover:text-ember-600">

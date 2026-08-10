@@ -138,7 +138,7 @@ export default function RegisterPage() {
   async function registerTeam(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!agreed) return setError("You must accept the rules and code of conduct");
+    if (!agreed) return setError("You must accept the tournament rules");
     if (players.some((p) => !p.player_name || !p.game_id)) {
       return setError("Every player needs a name and an in-game ID");
     }
@@ -422,10 +422,7 @@ export default function RegisterPage() {
 
         <label className="flex items-start gap-3 text-sm text-zinc-400">
           <input type="checkbox" className="mt-1" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-          <span>
-            We have read and agree to the tournament rules, code of conduct and the dual-submission
-            score verification procedure.
-          </span>
+          <span>We have read and agree to the tournament rules.</span>
         </label>
 
         <button
