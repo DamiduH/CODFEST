@@ -1,13 +1,33 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import StatusBadge from "@/components/StatusBadge";
 import TeamMark from "@/components/TeamMark";
+import { useSocketEvents } from "@/hooks/useSocket";
 import { ROUND_NAMES, type Match } from "@/lib/types";
 
 export default function MatchCard({ match, children }: { match: Match; children?: React.ReactNode }) {
   const finished = match.status === "finished";
   const live = match.status === "live";
+
+  // Live score — seeded from DB value, patched instantly via Socket.IO.
+  const [liveScore, setLiveScore] = useState<[number | null, number | null]>([
+    match.live_score1 ?? null,
+    match.live_score2 ?? null,
+  ]);
+
+  // Re-seed if the parent rerenders with fresh data.
+  useEffect(() => {
+    setLiveScore([match.live_score1 ?? null, match.live_score2 ?? null]);
+  }, [match.live_score1, match.live_score2]);
+
+  // Patch ONLY this card when the admin pushes a score update for THIS match.
+  useSocketEvents(["match:live_score"], (_event, payload: any) => {
+    if (payload?.matchId === match.id) {
+      setLiveScore([payload.score1, payload.score2]);
+    }
+  });
 
   return (
     <motion.div
@@ -32,8 +52,8 @@ export default function MatchCard({ match, children }: { match: Match; children?
 
       <div className="space-y-2.5 p-4">
         {[
-          { team: match.team1, score: match.final_score1, id: match.team1_id },
-          { team: match.team2, score: match.final_score2, id: match.team2_id },
+          { team: match.team1, finalScore: match.final_score1, liveS: liveScore[0], id: match.team1_id },
+          { team: match.team2, finalScore: match.final_score2, liveS: liveScore[1], id: match.team2_id },
         ].map((row, i) => (
           <div key={i} className="flex items-center justify-between gap-3">
             <TeamMark
@@ -41,13 +61,20 @@ export default function MatchCard({ match, children }: { match: Match; children?
               logoUrl={row.team?.logo_url}
               highlight={finished && match.winner_id === row.id && !!row.id}
             />
+            {/* Show final score when done, live score when running */}
             {finished && (
               <span
                 className={`font-mono text-xl font-bold ${
                   match.winner_id === row.id ? "text-ember-600" : "text-zinc-500"
                 }`}
               >
-                {row.score}
+                {row.finalScore}
+              </span>
+            )}
+            {live && row.liveS !== null && (
+              <span className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
+                <span className="font-mono text-xl font-bold text-green-400">{row.liveS}</span>
               </span>
             )}
           </div>

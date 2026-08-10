@@ -45,7 +45,9 @@ create table if not exists players (
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null references teams(id) on delete cascade,
   player_name text not null,
-  game_id text not null,
+  email text not null default '',
+  phone text not null default '',
+  game_id text not null default '',
   is_substitute boolean not null default false
 );
 

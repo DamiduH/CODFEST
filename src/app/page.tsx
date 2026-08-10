@@ -3,7 +3,8 @@ import Hero from "@/components/Hero";
 import AnimatedHomeContent from "@/components/AnimatedHomeContent";
 import { MAP_POOL } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+// Revalidate every 30 seconds — stats & announcements don't need real-time precision.
+export const revalidate = 30;
 
 export default async function HomePage() {
   const supa = db();

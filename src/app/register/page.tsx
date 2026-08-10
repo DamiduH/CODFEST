@@ -4,17 +4,17 @@ import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-interface PlayerRow {
-  player_name: string;
-  game_id: string;
-  is_substitute: boolean;
+interface MemberRow {
+  member_name: string;
+  email: string;
+  phone: string;
 }
 
-const emptyPlayer = (): PlayerRow => ({ player_name: "", game_id: "", is_substitute: false });
+const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "" });
 
-/** [01] OTP / [02] SQUAD progress indicator. */
+/** Progress bar for the two-step flow. */
 function StepBar({ step }: { step: 1 | 2 }) {
-  const steps = ["[01] OTP", "[02] SQUAD"];
+  const steps = ["[01] VERIFY EMAIL", "[02] REGISTER SQUAD"];
   return (
     <div className="mt-6 flex gap-2">
       {steps.map((label, i) => (
@@ -37,19 +37,25 @@ export default function RegisterPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // Step 1 — captain identity
   const [acc, setAcc] = useState({ name: "", email: "" });
-  const [team, setTeam] = useState({ team_name: "", phone: "", email: "", discord: "", whatsapp: "" });
-  const [players, setPlayers] = useState<PlayerRow[]>([emptyPlayer()]);
+
+  // Step 2 — team details
+  const [teamName, setTeamName] = useState("");
+  const [captainPhone, setCaptainPhone] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
+  const [members, setMembers] = useState<MemberRow[]>([emptyMember()]);
   const [agreed, setAgreed] = useState(false);
 
+  // UI state
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [pendingVerify, setPendingVerify] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
-  const [info, setInfo] = useState<string | null>(null);
 
+  /* ─── Step 1: send OTP ─── */
   async function startOtp(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -77,7 +83,6 @@ export default function RegisterPage() {
       else if (json.message) setInfo(json.message);
       setPendingVerify(acc.email);
       setOtp(process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" ? "000000" : "");
-      setTeam((t) => ({ ...t, email: t.email || acc.email }));
     } catch {
       setError("Network error — could not reach the server");
     } finally {
@@ -85,6 +90,7 @@ export default function RegisterPage() {
     }
   }
 
+  /* ─── Step 1: verify OTP ─── */
   async function verifyOtp(e: React.FormEvent) {
     e.preventDefault();
     if (!pendingVerify) return;
@@ -114,6 +120,7 @@ export default function RegisterPage() {
     }
   }
 
+  /* ─── Step 1: resend OTP ─── */
   async function resendVerification() {
     if (!pendingVerify) return;
     setBusy(true);
@@ -135,22 +142,31 @@ export default function RegisterPage() {
     }
   }
 
+  /* ─── Step 2: register team ─── */
   async function registerTeam(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!agreed) return setError("You must accept the tournament rules");
-    if (players.some((p) => !p.player_name || !p.game_id)) {
-      return setError("Every player needs a name and an in-game ID");
+    if (!agreed) return setError("You must accept the rules and code of conduct");
+    if (members.some((m) => !m.member_name)) {
+      return setError("Every player needs a name");
     }
     setBusy(true);
 
     const payload = {
-      ...team,
+      team_name: teamName,
+      phone: captainPhone,
+      // use captain email as team contact email
+      email: session?.user?.email ?? acc.email,
       agreed: true,
-      players: [
-        ...players.map((p) => ({ ...p, is_substitute: false })),
-      ],
+      players: members.map((m) => ({
+        player_name: m.member_name,
+        email: m.email,
+        phone: m.phone,
+        game_id: "",
+        is_substitute: false,
+      })),
     };
+
     const form = new FormData();
     form.set("payload", JSON.stringify(payload));
     if (logo) form.set("logo", logo);
@@ -162,26 +178,30 @@ export default function RegisterPage() {
     setDone(true);
   }
 
+  /* ─── Loading ─── */
   if (status === "loading") {
     return <p className="mt-20 text-center text-zinc-500">Loading…</p>;
   }
 
+  /* ─── Success screen ─── */
   if (done) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">
         <p className="font-mono text-sm tracking-[0.1em] text-ember-400">// TRANSMISSION RECEIVED</p>
         <h1 className="section-title mt-3">Registration Submitted</h1>
         <p className="mt-3 text-zinc-400">
-          Your squad is <strong className="text-amber-300">pending admin approval</strong>. Once
-          approved, your team dashboard unlocks and you&apos;ll appear on the Verified Squads page.
+          Your squad is{" "}
+          <strong className="text-amber-300">pending admin approval</strong>. Once approved, your
+          team will appear on the Verified Squads page.
         </p>
-        <button className="btn-primary mt-8" onClick={() => router.push("/dashboard")}>
-          Go to team dashboard
-        </button>
+        <p className="mt-2 text-sm text-zinc-500">
+          You will be contacted via the email / phone you provided.
+        </p>
       </div>
     );
   }
 
+  /* ─── OTP verification screen ─── */
   if (pendingVerify) {
     return (
       <div className="mx-auto max-w-md px-4 py-16">
@@ -236,20 +256,20 @@ export default function RegisterPage() {
     );
   }
 
-  // Not signed in → name + email only (no password / login setup)
+  /* ─── Step 1: captain email + OTP start ─── */
   if (!session) {
     return (
       <div className="mx-auto max-w-md px-4 py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
           <h1 className="section-title">Squad Registration</h1>
           <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
-            // OTP + TEAM ONLY
+            // TEAM LEADER — EMAIL VERIFICATION
           </p>
         </div>
         <StepBar step={1} />
         <p className="mt-4 text-center text-sm text-zinc-500">
-          Only the <strong className="text-zinc-300">team leader</strong> registers. We verify your
-          email with an OTP — no password account to create.
+          Only the <strong className="text-zinc-300">team leader</strong> registers. Enter your
+          name and email — we&apos;ll send a one-time code. No password required.
         </p>
         <form onSubmit={startOtp} className="card mt-8 space-y-4 p-6">
           {error && (
@@ -258,10 +278,10 @@ export default function RegisterPage() {
             </p>
           )}
           <div>
-            <label className="label">Team Leader</label>
+            <label className="label">Leader&apos;s full name</label>
             <input
               className="input"
-              placeholder="REAL_NAME"
+              placeholder="FULL_NAME"
               required
               minLength={2}
               value={acc.name}
@@ -269,10 +289,10 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="label">Email</label>
+            <label className="label">Leader&apos;s email</label>
             <input
               className="input"
-              placeholder="OPERATOR@DOMAIN"
+              placeholder="LEADER@DOMAIN"
               type="email"
               required
               value={acc.email}
@@ -287,31 +307,32 @@ export default function RegisterPage() {
     );
   }
 
-  // Signed in → team registration
+  /* ─── Step 2: team + members form ─── */
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="border-l-4 border-l-ember-400 pl-4">
-        <h1 className="section-title">Squad Authorization</h1>
+        <h1 className="section-title">Team Registration</h1>
         <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
-          // DEPARTMENTAL_REGISTRATION_HUB
+          // SQUAD DETAILS
         </p>
       </div>
       <StepBar step={2} />
+
       <ul className="card mt-4 list-inside list-disc p-4 text-sm text-zinc-400">
         <li>Only the team leader submits this form.</li>
-        <li>Keep the team name short (max 30 characters).</li>
-        <li>Team names and gamer tags must not be offensive.</li>
-        <li>Use a valid phone number — organizers will contact you on it.</li>
-        <li>Real names only for all players.</li>
+        <li>Team name must be unique (max 30 characters).</li>
+        <li>Add all team members — name, email, and mobile number required.</li>
+        <li>Real names only.</li>
       </ul>
 
-      <form onSubmit={registerTeam} className="card mt-6 space-y-5 p-6">
+      <form onSubmit={registerTeam} className="card mt-6 space-y-6 p-6">
         {error && (
           <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
             {error}
           </p>
         )}
 
+        {/* ── Team basics ── */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label">Team name</label>
@@ -319,11 +340,22 @@ export default function RegisterPage() {
               className="input"
               required
               maxLength={30}
-              value={team.team_name}
-              onChange={(e) => setTeam({ ...team, team_name: e.target.value })}
+              placeholder="SQUAD_NAME"
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
             />
           </div>
           <div>
+            <label className="label">Leader&apos;s mobile number</label>
+            <input
+              className="input"
+              required
+              placeholder="+91 XXXXX XXXXX"
+              value={captainPhone}
+              onChange={(e) => setCaptainPhone(e.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-2">
             <label className="label">Team logo (optional, max 4 MB)</label>
             <input
               className="input"
@@ -332,86 +364,81 @@ export default function RegisterPage() {
               onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
             />
           </div>
-          <div>
-            <label className="label">Team Leader&apos;s Phone Number</label>
-            <input
-              className="input"
-              required
-              placeholder="+94"
-              value={team.phone}
-              onChange={(e) => setTeam({ ...team, phone: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="label">Team contact email</label>
-            <input
-              className="input"
-              type="email"
-              required
-              value={team.email}
-              onChange={(e) => setTeam({ ...team, email: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="label">Discord</label>
-            <input
-              className="input"
-              placeholder="username"
-              value={team.discord}
-              onChange={(e) => setTeam({ ...team, discord: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="label">WhatsApp</label>
-            <input
-              className="input"
-              placeholder="+94"
-              value={team.whatsapp}
-              onChange={(e) => setTeam({ ...team, whatsapp: e.target.value })}
-            />
-          </div>
         </div>
 
+        {/* ── Members ── */}
         <div>
           <div className="flex items-center justify-between">
-            <label className="label !mb-0">Players (up to 5, plus you as team leader)</label>
-            {players.length < 5 && (
+            <label className="label !mb-0">
+              Team members{" "}
+              <span className="text-zinc-500">(up to 5, not including you)</span>
+            </label>
+            {members.length < 5 && (
               <button
                 type="button"
                 className="text-sm font-semibold text-ember-400 hover:text-ember-500"
-                onClick={() => setPlayers([...players, emptyPlayer()])}
+                onClick={() => setMembers([...members, emptyMember()])}
               >
-                + Add player
+                + Add member
               </button>
             )}
           </div>
-          <div className="mt-2 space-y-2">
-            {players.map((p, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  className="input"
-                  placeholder={`Player ${i + 1} real name`}
-                  value={p.player_name}
-                  onChange={(e) =>
-                    setPlayers(players.map((x, j) => (j === i ? { ...x, player_name: e.target.value } : x)))
-                  }
-                />
-                <input
-                  className="input"
-                  placeholder="In-game ID"
-                  value={p.game_id}
-                  onChange={(e) =>
-                    setPlayers(players.map((x, j) => (j === i ? { ...x, game_id: e.target.value } : x)))
-                  }
-                />
-                {players.length > 1 && (
+
+          <div className="mt-3 space-y-3">
+            {members.map((m, i) => (
+              <div
+                key={i}
+                className="relative rounded border border-night-700 bg-night-900 p-3"
+              >
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-zinc-600">
+                  Member {i + 1}
+                </p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <div>
+                    <label className="label text-[11px]">Full name</label>
+                    <input
+                      className="input"
+                      placeholder="Real name"
+                      required
+                      value={m.member_name}
+                      onChange={(e) =>
+                        setMembers(members.map((x, j) => (j === i ? { ...x, member_name: e.target.value } : x)))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="label text-[11px]">Email address</label>
+                    <input
+                      className="input"
+                      type="email"
+                      placeholder="member@domain"
+                      value={m.email}
+                      onChange={(e) =>
+                        setMembers(members.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="label text-[11px]">Mobile number</label>
+                    <input
+                      className="input"
+                      placeholder="+91 XXXXX XXXXX"
+                      required
+                      value={m.phone}
+                      onChange={(e) =>
+                        setMembers(members.map((x, j) => (j === i ? { ...x, phone: e.target.value } : x)))
+                      }
+                    />
+                  </div>
+                </div>
+                {members.length > 1 && (
                   <button
                     type="button"
-                    className="px-2 text-zinc-500 hover:text-red-400"
-                    onClick={() => setPlayers(players.filter((_, j) => j !== i))}
-                    aria-label="Remove player"
+                    className="absolute right-3 top-3 font-mono text-xs text-zinc-600 hover:text-red-400"
+                    onClick={() => setMembers(members.filter((_, j) => j !== i))}
+                    aria-label="Remove member"
                   >
-                    ✕
+                    ✕ remove
                   </button>
                 )}
               </div>
@@ -419,17 +446,21 @@ export default function RegisterPage() {
           </div>
         </div>
 
-
+        {/* ── Agreement ── */}
         <label className="flex items-start gap-3 text-sm text-zinc-400">
-          <input type="checkbox" className="mt-1" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-          <span>We have read and agree to the tournament rules.</span>
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+          />
+          <span>
+            We have read and agree to the tournament rules and code of conduct.
+          </span>
         </label>
 
-        <button
-          className="btn-primary w-full disabled:bg-zinc-700 disabled:text-zinc-400 disabled:shadow-none"
-          disabled={busy || !agreed}
-        >
-          {busy ? "Submitting…" : "Submit team registration"}
+        <button className="btn-primary w-full" disabled={busy}>
+          {busy ? "Submitting…" : "Submit Team Registration"}
         </button>
       </form>
     </div>

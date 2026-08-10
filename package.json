@@ -18,11 +18,14 @@
     "framer-motion": "^11.3.0",
     "next": "^14.2.15",
     "next-auth": "^4.24.7",
+    "pusher": "^5.3.4",
+    "pusher-js": "^8.6.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "resend": "^6.18.1",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
+    "tail": "^2.2.6",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -8,7 +8,10 @@ let socket: Socket | null = null;
 /** Shared Socket.IO client (one connection per browser tab). */
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io({ transports: ["websocket", "polling"] });
+    // In LAN/event mode: set NEXT_PUBLIC_SOCKET_URL=http://<server-ip>:3000
+    // Leave unset for same-machine dev (relative URL).
+    const url = process.env.NEXT_PUBLIC_SOCKET_URL ?? undefined;
+    socket = io(url as any, { transports: ["websocket", "polling"] });
   }
   return socket;
 }
