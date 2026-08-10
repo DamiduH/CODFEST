@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/supabase";
 import { isOtpTestMode, TEST_OTP } from "@/lib/email";
@@ -10,6 +11,13 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
+    // ── Google OAuth (admin sign-in) ──────────────────────────────────
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    }),
+
+    // ── Email / OTP credentials ───────────────────────────────────────
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -76,13 +84,49 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    /**
+     * signIn callback — gate Google logins to users that already exist in
+     * the DB with role="admin". Unknown Google accounts are rejected.
+     */
+    async signIn({ user, account }) {
+      // Credentials provider: always allowed (authorize() handles validation).
+      if (account?.provider === "credentials") return true;
+
+      // Google provider: the email must belong to an admin in our DB.
+      if (account?.provider === "google" && user.email) {
+        const { data: dbUser } = await db()
+          .from("users")
+          .select("id, role")
+          .eq("email", user.email.toLowerCase().trim())
+          .maybeSingle();
+        if (!dbUser || dbUser.role !== "admin") {
+          // Return a URL string to redirect to an error page.
+          return "/login?error=google_not_admin";
+        }
+        // Attach DB id so jwt() can pick it up.
+        (user as any)._dbId = dbUser.id;
+      }
+
+      return true;
+    },
+
+    async jwt({ token, user, account }) {
       if (user) {
-        token.id = (user as any).id;
-        token.role = (user as any).role;
+        // Credentials provider sets id/role directly on the user object.
+        if (account?.provider === "credentials") {
+          token.id = (user as any).id;
+          token.role = (user as any).role;
+        }
+        // Google provider: id was stashed in _dbId; role is always admin
+        // (signIn callback guarantees this).
+        if (account?.provider === "google") {
+          token.id = (user as any)._dbId ?? user.id;
+          token.role = "admin" as Role;
+        }
       }
       return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id;

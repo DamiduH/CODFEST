@@ -7,6 +7,9 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import Countdown from "@/components/Countdown";
 
+// ── Real tournament date — update this when the date changes ──────────
+const TOURNAMENT_START = "2026-08-15T10:00:00+05:30"; // 15 Aug 2026, 10:00 AM IST
+
 export default function Hero({
   liveCount,
   nextMatchTime,
@@ -18,10 +21,7 @@ export default function Hero({
   prizePool: string;
   stats: { teams: number; players: number; played: number };
 }) {
-  const countdownTarget =
-    nextMatchTime ??
-    process.env.NEXT_PUBLIC_TOURNAMENT_START ??
-    new Date().toISOString();
+  const countdownTarget = nextMatchTime ?? TOURNAMENT_START;
 
   return (
     <>
