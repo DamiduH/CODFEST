@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { uploadImage } from "@/lib/cloudinary";
 import { logAudit } from "@/lib/audit";
 import { emitToAdmins } from "@/lib/socket";
+import { sendWelcomeEmail } from "@/lib/email";
 
 const playerSchema = z.object({
   player_name: z.string().min(1).max(50),
@@ -87,5 +88,26 @@ export async function POST(req: Request) {
   await logAudit(user.id, "team.registered", team.id, { team_name: team.team_name });
   emitToAdmins("team:registered", { teamId: team.id, teamName: team.team_name });
 
+  // Dispatch Welcome email to captain asynchronously
+  sendWelcomeEmail({
+    to: d.email,
+    name: user.name,
+    teamName: team.team_name,
+    regId: team.id,
+  }).catch((err) => console.error("[sendWelcomeEmail captain] error:", err));
+
+  // Dispatch Welcome email to squad members with email addresses
+  for (const player of d.players) {
+    if (player.email && player.email.toLowerCase().trim() !== d.email.toLowerCase().trim()) {
+      sendWelcomeEmail({
+        to: player.email,
+        name: player.player_name,
+        teamName: team.team_name,
+        regId: team.id,
+      }).catch((err) => console.error(`[sendWelcomeEmail player ${player.email}] error:`, err));
+    }
+  }
+
   return NextResponse.json({ team }, { status: 201 });
 }
+

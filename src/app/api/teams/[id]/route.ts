@@ -35,23 +35,25 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return NextResponse.json({ team, players: players ?? [], matches: matches ?? [] });
 }
 
-const rosterSchema = z.object({
-  discord: z.string().max(60).optional(),
-  whatsapp: z.string().max(20).optional(),
-  players: z
-    .array(
-      z.object({
-        player_name: z.string().min(1).max(50),
-        game_id: z.string().min(1).max(50),
-        is_substitute: z.boolean().default(false),
-      })
-    )
-    .min(1)
-    .max(7)
-    .optional(),
+const playerEditSchema = z.object({
+  player_name: z.string().min(1).max(50),
+  email: z.string().email().optional().default(""),
+  phone: z.string().max(20).optional().default(""),
+  im_number: z.string().max(50).optional().default(""),
+  game_id: z.string().max(50).optional().default(""),
+  is_substitute: z.boolean().default(false),
 });
 
-/** Captain edits their own roster/contact info. */
+const rosterSchema = z.object({
+  team_name: z.string().min(2).max(30).optional(),
+  phone: z.string().min(6).max(20).optional(),
+  email: z.string().email().optional(),
+  discord: z.string().max(60).optional(),
+  whatsapp: z.string().max(20).optional(),
+  players: z.array(playerEditSchema).min(1).max(6).optional(),
+});
+
+/** Captain edits their own team details and roster. */
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

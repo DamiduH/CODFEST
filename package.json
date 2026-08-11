@@ -15,6 +15,7 @@
     "cloudinary": "^2.4.0",
     "cross-env": "^7.0.3",
     "dotenv": "^17.4.2",
+    "firebase": "^12.17.1",
     "framer-motion": "^11.3.0",
     "next": "^14.2.15",
     "next-auth": "^4.24.7",

@@ -1,16 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useState, useEffect, useRef } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 interface MemberRow {
   member_name: string;
   email: string;
   phone: string;
+  im_number: string;
 }
 
-const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "" });
+const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "", im_number: "" });
+
+function memberFromPlayer(p: any): MemberRow {
+  return {
+    member_name: p.player_name ?? "",
+    email: p.email ?? "",
+    phone: p.phone ?? "",
+    im_number: p.im_number ?? "",
+  };
+}
 
 /** Progress bar for the two-step flow. */
 function StepBar({ step }: { step: 1 | 2 }) {
@@ -33,30 +43,135 @@ function StepBar({ step }: { step: 1 | 2 }) {
   );
 }
 
+// ─── Step 1 sub-states ────────────────────────────────────────────────────────
+// "email"     → only the email field is shown (initial landing)
+// "new"       → new user: show name + IM number + email (pre-filled, locked)
+// "returning" → returning leader with no team: show OTP-request button only
+// "otp"       → OTP entry form
+type Step1State = "email" | "new" | "returning" | "otp";
+
 export default function RegisterPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Step 1 — captain identity
-  const [acc, setAcc] = useState({ name: "", email: "" });
+  // ── Step 1 state ──
+  const [step1, setStep1] = useState<Step1State>("email");
+  const [emailInput, setEmailInput] = useState("");
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  // Full details (name + IM) — only needed for new users
+  const [leaderName, setLeaderName] = useState("");
+  const [leaderIm, setLeaderIm] = useState("");
+  // OTP
+  const [pendingVerify, setPendingVerify] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
 
-  // Step 2 — team details
+  // ── Step 2 state ──
   const [teamName, setTeamName] = useState("");
   const [captainPhone, setCaptainPhone] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [members, setMembers] = useState<MemberRow[]>([emptyMember()]);
   const [agreed, setAgreed] = useState(false);
 
+  // Edit mode — captain already has a team
+  const [editMode, setEditMode] = useState(false);
+  const [existingTeamId, setExistingTeamId] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
+
   // UI state
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  const [pendingVerify, setPendingVerify] = useState<string | null>(null);
-  const [otp, setOtp] = useState("");
+  // Prevent flash: wait until we've checked the team before rendering Step 2
+  const [sessionChecked, setSessionChecked] = useState(false);
+  // Guard: run the session check exactly ONCE after NextAuth resolves.
+  // Using a ref (not state) so it doesn't trigger re-renders.
+  const hasChecked = useRef(false);
 
-  /* ─── Step 1: send OTP ─── */
-  async function startOtp(e: React.FormEvent) {
+  /* ─── Session check: allow access for 1 hour after OTP verification ──── */
+  useEffect(() => {
+    // Wait for NextAuth to resolve.
+    if (status === "loading") return;
+    // Run ONCE only — the ref prevents re-running when signOut/signIn change
+    // status mid-session, which was causing the rapid OTP loop.
+    if (hasChecked.current) return;
+    hasChecked.current = true;
+
+    if (!session) {
+      setSessionChecked(true);
+      return;
+    }
+
+    // Read the timestamp written to sessionStorage after OTP verification.
+    // sessionStorage persists across refreshes (same tab) but clears on tab close.
+    const ONE_HOUR = 60 * 60 * 1000;
+    const raw = sessionStorage.getItem("captainVerifiedAt");
+    const verifiedAt = raw ? parseInt(raw, 10) : 0;
+    const withinWindow = Date.now() - verifiedAt < ONE_HOUR;
+
+    if (!withinWindow) {
+      // ⏰ Session older than 1 hour (or no timestamp) → sign out + re-verify
+      const email = session.user?.email ?? "";
+      sessionStorage.removeItem("captainVerifiedAt");
+      signOut({ redirect: false }).then(() => {
+        if (email) {
+          setEmailInput(email);
+          setStep1("returning");
+        }
+        setSessionChecked(true);
+      });
+      return;
+    }
+
+    // ✅ Within 1-hour window → check team status
+    fetch("/api/teams/my")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.team) {
+          setExistingTeamId(json.team.id);
+          setTeamName(json.team.team_name ?? "");
+          setCaptainPhone(json.team.phone ?? "");
+          if (json.players?.length) {
+            setMembers(json.players.map(memberFromPlayer));
+          }
+          setEditMode(true);
+        }
+        // No team yet but within 1-hour window → show registration form
+        setSessionChecked(true);
+      })
+      .catch(() => setSessionChecked(true));
+  }, [status]); // depends on status so it fires when NextAuth resolves
+
+  /* ─── Step 1a: check email → branch to new / returning ─── */
+  async function checkEmail(e: React.FormEvent) {
+    e.preventDefault();
+    const email = emailInput.trim().toLowerCase();
+    if (!email) return;
+    setCheckingEmail(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
+      const json = await res.json();
+
+      if (!json.exists) {
+        // Brand new — ask for name + IM number
+        setStep1("new");
+      } else if (json.hasTeam) {
+        // Has a team already — they should just log in via email to edit
+        setStep1("returning");
+      } else {
+        // Verified captain, no team yet — skip name/IM, just send OTP
+        setStep1("returning");
+      }
+    } catch {
+      setError("Could not reach the server. Try again.");
+    } finally {
+      setCheckingEmail(false);
+    }
+  }
+
+  /* ─── Step 1b: send OTP (new user with name + IM) ─── */
+  async function startOtpNew(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
@@ -65,24 +180,52 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(acc),
+        body: JSON.stringify({ name: leaderName, email: emailInput.trim() }),
       });
       const text = await res.text();
       let json: { error?: string; needsVerification?: boolean; message?: string } = {};
-      try {
-        json = text ? JSON.parse(text) : {};
-      } catch {
-        setError(res.ok ? "Unexpected server response" : `Server error (${res.status})`);
-        return;
-      }
+      try { json = text ? JSON.parse(text) : {}; } catch { /* ignore */ }
+
       if (!res.ok && !json.needsVerification) {
         setError(json.error ?? "Could not start registration");
         return;
       }
-      if (json.error && json.needsVerification) setInfo(json.error);
-      else if (json.message) setInfo(json.message);
-      setPendingVerify(acc.email);
+      if (json.message) setInfo(json.message);
+      setPendingVerify(emailInput.trim().toLowerCase());
       setOtp(process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" ? "000000" : "");
+      setStep1("otp");
+    } catch {
+      setError("Network error — could not reach the server");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /* ─── Step 1b: send OTP (returning leader — email only) ─── */
+  async function startOtpReturning(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    try {
+      // We pass a dummy name so the schema validates — the server ignores it for verified users
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "leader", email: emailInput.trim() }),
+      });
+      const text = await res.text();
+      let json: { error?: string; needsVerification?: boolean; message?: string; returning?: boolean } = {};
+      try { json = text ? JSON.parse(text) : {}; } catch { /* ignore */ }
+
+      if (!res.ok && !json.needsVerification) {
+        setError(json.error ?? "Could not send OTP");
+        return;
+      }
+      if (json.message) setInfo(json.message);
+      setPendingVerify(emailInput.trim().toLowerCase());
+      setOtp(process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" ? "000000" : "");
+      setStep1("otp");
     } catch {
       setError("Network error — could not reach the server");
     } finally {
@@ -111,8 +254,30 @@ export default function RegisterPage() {
         setError(map[signed.error] ?? "Invalid OTP");
         return;
       }
+      // ⏰ Stamp verification time — session is valid for 1 hour from now.
+      // sessionStorage persists across page refreshes (same tab) so the
+      // leader can refresh without being asked for OTP again within 1 hour.
+      sessionStorage.setItem("captainVerifiedAt", Date.now().toString());
+      // Clear leader identity fields (never persisted across refreshes)
+      setEmailInput("");
+      setLeaderName("");
+      setLeaderIm("");
       setPendingVerify(null);
-      router.refresh();
+      setStep1("email");     // reset step state
+      setSessionChecked(true); // skip the mount-time check (already done)
+      // Trigger team check immediately to move to Step 2
+      fetch("/api/teams/my")
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.team) {
+            setExistingTeamId(json.team.id);
+            setTeamName(json.team.team_name ?? "");
+            setCaptainPhone(json.team.phone ?? "");
+            if (json.players?.length) setMembers(json.players.map(memberFromPlayer));
+            setEditMode(true);
+          }
+        })
+        .catch(() => {});
     } catch {
       setError("Could not verify OTP");
     } finally {
@@ -147,21 +312,19 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
     if (!agreed) return setError("You must accept the rules and code of conduct");
-    if (members.some((m) => !m.member_name)) {
-      return setError("Every player needs a name");
-    }
+    if (members.some((m) => !m.member_name)) return setError("Every player needs a name");
     setBusy(true);
 
     const payload = {
       team_name: teamName,
       phone: captainPhone,
-      // use captain email as team contact email
-      email: session?.user?.email ?? acc.email,
+      email: session?.user?.email ?? "",
       agreed: true,
       players: members.map((m) => ({
         player_name: m.member_name,
         email: m.email,
         phone: m.phone,
+        im_number: m.im_number,
         game_id: "",
         is_substitute: false,
       })),
@@ -178,12 +341,46 @@ export default function RegisterPage() {
     setDone(true);
   }
 
-  /* ─── Loading ─── */
-  if (status === "loading") {
+  /* ─── Edit mode: save changes ─── */
+  async function saveTeamEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!existingTeamId) return;
+    setError(null);
+    if (members.some((m) => !m.member_name)) return setError("Every player needs a name");
+    setBusy(true);
+
+    const body = {
+      team_name: teamName,
+      phone: captainPhone,
+      players: members.map((m) => ({
+        player_name: m.member_name,
+        email: m.email,
+        phone: m.phone,
+        im_number: m.im_number,
+        game_id: "",
+        is_substitute: false,
+      })),
+    };
+
+    const res = await fetch(`/api/teams/${existingTeamId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return setError(json.error ?? "Could not save changes");
+    setEditSuccess(true);
+    setError(null);
+  }
+
+  /* ───────────────── RENDER ───────────────────────────────────────────────── */
+
+  if (status === "loading" || !sessionChecked) {
     return <p className="mt-20 text-center text-zinc-500">Loading…</p>;
   }
 
-  /* ─── Success screen ─── */
+  /* ─── Success screen (new registration) ─── */
   if (done) {
     return (
       <div className="site-gutter mx-auto max-w-lg py-20 text-center">
@@ -202,7 +399,7 @@ export default function RegisterPage() {
   }
 
   /* ─── OTP verification screen ─── */
-  if (pendingVerify) {
+  if (step1 === "otp" && pendingVerify) {
     return (
       <div className="site-gutter mx-auto max-w-md py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
@@ -218,7 +415,7 @@ export default function RegisterPage() {
         </p>
         {process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" && (
           <p className="mt-2 text-center font-mono text-xs text-amber-300">
-            CHECKING MODE — use OTP <strong>000000</strong>
+            TEST MODE — use OTP <strong>000000</strong>
           </p>
         )}
         <form onSubmit={verifyOtp} className="card mt-8 space-y-4 p-6">
@@ -251,13 +448,20 @@ export default function RegisterPage() {
           <button type="button" className="btn-ghost w-full" disabled={busy} onClick={resendVerification}>
             {busy ? "Sending…" : "Resend OTP"}
           </button>
+          <button
+            type="button"
+            className="w-full text-center font-mono text-[11px] text-zinc-600 hover:text-zinc-400"
+            onClick={() => { setStep1("email"); setError(null); setInfo(null); setPendingVerify(null); }}
+          >
+            ← Use a different email
+          </button>
         </form>
       </div>
     );
   }
 
-  /* ─── Step 1: captain email + OTP start ─── */
-  if (!session) {
+  /* ─── Step 1: email-only landing (initial check) ─── */
+  if (!session && step1 === "email") {
     return (
       <div className="site-gutter mx-auto max-w-md py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
@@ -268,26 +472,15 @@ export default function RegisterPage() {
         </div>
         <StepBar step={1} />
         <p className="mt-4 text-center text-sm text-zinc-500">
-          Only the <strong className="text-zinc-300">team leader</strong> registers. Enter your
-          name and email — we&apos;ll send a one-time code. No password required.
+          Only the <strong className="text-zinc-300">team leader</strong> registers.
+          Enter your email to get started.
         </p>
-        <form onSubmit={startOtp} className="card mt-8 space-y-4 p-6">
+        <form onSubmit={checkEmail} className="card mt-8 space-y-4 p-6">
           {error && (
             <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
               {error}
             </p>
           )}
-          <div>
-            <label className="label">Leader&apos;s full name</label>
-            <input
-              className="input"
-              placeholder="FULL_NAME"
-              required
-              minLength={2}
-              value={acc.name}
-              onChange={(e) => setAcc({ ...acc, name: e.target.value })}
-            />
-          </div>
           <div>
             <label className="label">Leader&apos;s email</label>
             <input
@@ -295,37 +488,168 @@ export default function RegisterPage() {
               placeholder="LEADER@DOMAIN"
               type="email"
               required
-              value={acc.email}
-              onChange={(e) => setAcc({ ...acc, email: e.target.value })}
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
             />
           </div>
-          <button className="btn-primary w-full" disabled={busy}>
-            {busy ? "Sending OTP…" : "Send OTP →"}
+          <button className="btn-primary w-full" disabled={checkingEmail}>
+            {checkingEmail ? "Checking…" : "Continue →"}
           </button>
         </form>
       </div>
     );
   }
 
-  /* ─── Step 2: team + members form ─── */
+  /* ─── Step 1: new user — collect name + IM number ─── */
+  if (!session && step1 === "new") {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16">
+        <div className="border-l-4 border-l-ember-400 pl-4">
+          <h1 className="section-title">Squad Registration</h1>
+          <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
+            // NEW TEAM LEADER
+          </p>
+        </div>
+        <StepBar step={1} />
+        <p className="mt-4 text-center text-sm text-zinc-500">
+          Fill in your details — we&apos;ll send a one-time code to verify your email.
+        </p>
+        <form onSubmit={startOtpNew} className="card mt-8 space-y-4 p-6">
+          {error && (
+            <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
+              {error}
+            </p>
+          )}
+          {/* Email locked — already entered */}
+          <div>
+            <label className="label">Leader&apos;s email</label>
+            <input
+              className="input opacity-60 cursor-not-allowed"
+              type="email"
+              value={emailInput}
+              readOnly
+            />
+          </div>
+          <div>
+            <label className="label">Full name</label>
+            <input
+              className="input"
+              placeholder="FULL_NAME"
+              required
+              minLength={2}
+              value={leaderName}
+              onChange={(e) => setLeaderName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label">IM Number</label>
+            <input
+              className="input"
+              placeholder="IM_NUMBER"
+              required
+              value={leaderIm}
+              onChange={(e) => setLeaderIm(e.target.value)}
+            />
+          </div>
+          <button className="btn-primary w-full" disabled={busy}>
+            {busy ? "Sending OTP…" : "Send OTP →"}
+          </button>
+          <button
+            type="button"
+            className="w-full text-center font-mono text-[11px] text-zinc-600 hover:text-zinc-400"
+            onClick={() => { setStep1("email"); setError(null); }}
+          >
+            ← Change email
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  /* ─── Step 1: returning leader — OTP re-login ─── */
+  if (!session && step1 === "returning") {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16">
+        <div className="border-l-4 border-l-ember-400 pl-4">
+          <h1 className="section-title">Welcome Back</h1>
+          <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
+            // RETURNING LEADER — OTP RE-LOGIN
+          </p>
+        </div>
+        <StepBar step={1} />
+
+        <div className="mt-4 border border-ember-400/30 bg-ember-600/10 px-4 py-3 font-mono text-xs text-ember-300">
+          ✓ Your account was found for{" "}
+          <strong className="text-ember-400">{emailInput}</strong>.
+          Click below to receive a sign-in code and continue your registration.
+        </div>
+
+        <form onSubmit={startOtpReturning} className="card mt-6 space-y-4 p-6">
+          {error && (
+            <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
+              {error}
+            </p>
+          )}
+          {info && (
+            <p className="border border-ember-600/40 bg-ember-600/10 px-3 py-2 font-mono text-xs text-ember-400">
+              {info}
+            </p>
+          )}
+          <button className="btn-primary w-full" disabled={busy}>
+            {busy ? "Sending OTP…" : "Send OTP to my email →"}
+          </button>
+          <button
+            type="button"
+            className="w-full text-center font-mono text-[11px] text-zinc-600 hover:text-zinc-400"
+            onClick={() => { setStep1("email"); setError(null); setInfo(null); }}
+          >
+            ← Use a different email
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  /* ─── Shared team form (register OR edit) ─── */
+  const isEdit = editMode && !!existingTeamId;
+  const formTitle = isEdit ? "Edit Your Team" : "Team Registration";
+  const formSubtitle = isEdit ? "// UPDATE SQUAD DETAILS" : "// SQUAD DETAILS";
+  const submitLabel = isEdit ? "Save Changes" : "Submit Team Registration";
+  const onSubmit = isEdit ? saveTeamEdit : registerTeam;
+
   return (
     <div className="site-gutter mx-auto max-w-2xl py-12">
       <div className="border-l-4 border-l-ember-400 pl-4">
-        <h1 className="section-title">Team Registration</h1>
+        <h1 className="section-title">{formTitle}</h1>
         <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
-          // SQUAD DETAILS
+          {formSubtitle}
         </p>
       </div>
-      <StepBar step={2} />
+      {!isEdit && <StepBar step={2} />}
 
-      <ul className="card mt-4 list-inside list-disc p-4 text-sm text-zinc-400">
-        <li>Only the team leader submits this form.</li>
-        <li>Team name must be unique (max 30 characters).</li>
-        <li>Add all team members — name, email, and mobile number required.</li>
-        <li>Real names only.</li>
-      </ul>
+      {/* Edit success banner */}
+      {editSuccess && (
+        <div className="mt-4 border border-green-500/40 bg-green-500/10 px-4 py-3 font-mono text-xs text-green-300">
+          ✓ Changes saved successfully.
+        </div>
+      )}
 
-      <form onSubmit={registerTeam} className="card mt-6 space-y-6 p-6">
+      {isEdit && !editSuccess && (
+        <div className="mt-4 border border-ember-400/30 bg-ember-600/10 px-4 py-3 font-mono text-xs text-ember-300">
+          ✏ You&apos;re editing your existing team. Changes take effect immediately.
+        </div>
+      )}
+
+      {!isEdit && (
+        <ul className="card mt-4 list-inside list-disc p-4 text-sm text-zinc-400">
+          <li>Only the team leader submits this form.</li>
+          <li>Team name must be unique (max 30 characters).</li>
+          <li>Add all team members — name, email, mobile, and IM Number required.</li>
+          <li>Real names only.</li>
+        </ul>
+      )}
+
+      <form onSubmit={onSubmit} className="card mt-6 space-y-6 p-6">
         {error && (
           <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
             {error}
@@ -350,20 +674,22 @@ export default function RegisterPage() {
             <input
               className="input"
               required
-              placeholder="+91 XXXXX XXXXX"
+              placeholder="+94 XXX XXX XXXX"
               value={captainPhone}
               onChange={(e) => setCaptainPhone(e.target.value)}
             />
           </div>
-          <div className="sm:col-span-2">
-            <label className="label">Team logo (optional, max 4 MB)</label>
-            <input
-              className="input"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
-            />
-          </div>
+          {!isEdit && (
+            <div className="sm:col-span-2">
+              <label className="label">Team logo (optional, max 4 MB)</label>
+              <input
+                className="input"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
+              />
+            </div>
+          )}
         </div>
 
         {/* ── Members ── */}
@@ -393,7 +719,7 @@ export default function RegisterPage() {
                 <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-zinc-600">
                   Member {i + 1}
                 </p>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <label className="label text-[11px]">Full name</label>
                     <input
@@ -422,11 +748,23 @@ export default function RegisterPage() {
                     <label className="label text-[11px]">Mobile number</label>
                     <input
                       className="input"
-                      placeholder="+91 XXXXX XXXXX"
+                      placeholder="+94 XXX XXX XXXX"
                       required
                       value={m.phone}
                       onChange={(e) =>
                         setMembers(members.map((x, j) => (j === i ? { ...x, phone: e.target.value } : x)))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="label text-[11px]">IM Number</label>
+                    <input
+                      className="input"
+                      placeholder="IM_NUMBER"
+                      required
+                      value={m.im_number}
+                      onChange={(e) =>
+                        setMembers(members.map((x, j) => (j === i ? { ...x, im_number: e.target.value } : x)))
                       }
                     />
                   </div>
@@ -446,21 +784,23 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* ── Agreement ── */}
-        <label className="flex items-start gap-3 text-sm text-zinc-400">
-          <input
-            type="checkbox"
-            className="mt-1"
-            checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
-          />
-          <span>
-            We have read and agree to the tournament rules and code of conduct.
-          </span>
-        </label>
+        {/* ── Agreement (new registration only) ── */}
+        {!isEdit && (
+          <label className="flex items-start gap-3 text-sm text-zinc-400">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+            />
+            <span>
+              We have read and agree to the tournament rules and code of conduct.
+            </span>
+          </label>
+        )}
 
         <button className="btn-primary w-full" disabled={busy}>
-          {busy ? "Submitting…" : "Submit Team Registration"}
+          {busy ? (isEdit ? "Saving…" : "Submitting…") : submitLabel}
         </button>
       </form>
     </div>

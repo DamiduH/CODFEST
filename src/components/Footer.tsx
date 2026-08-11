@@ -21,6 +21,7 @@ export default function Footer() {
             Association.
           </p>
         </div>
+
         <div>
           <h4 className="inline-block border-b border-zinc-500/30 pb-1 font-mono text-xs uppercase tracking-[0.1em] text-zinc-500">
             System Links
@@ -43,6 +44,7 @@ export default function Footer() {
             </li>
           </ul>
         </div>
+
         <div>
           <h4 className="inline-block border-b border-zinc-500/30 pb-1 font-mono text-xs uppercase tracking-[0.1em] text-zinc-500">
             Comms
@@ -55,6 +57,41 @@ export default function Footer() {
             </li>
           </ul>
         </div>
+
+        <div>
+          <h4 className="inline-block border-b border-zinc-500/30 pb-1 font-mono text-xs uppercase tracking-[0.1em] text-zinc-500">
+            Organized By
+          </h4>
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <div className="flex items-center justify-center rounded border border-night-700 bg-night-900/60 p-2 transition hover:border-zinc-500 hover:bg-night-800">
+              <Image
+                src="/uok-crest.png"
+                alt="University of Kelaniya Crest"
+                width={120}
+                height={120}
+                className="h-10 w-auto object-contain opacity-80 hover:opacity-100"
+              />
+            </div>
+            <div className="flex items-center justify-center rounded border border-night-700 bg-night-900/60 p-2 transition hover:border-zinc-500 hover:bg-night-800">
+              <Image
+                src="/mit-it-logo.png"
+                alt="MIT-IT Logo"
+                width={120}
+                height={120}
+                className="h-10 w-auto object-contain opacity-80 hover:opacity-100"
+              />
+            </div>
+            <div className="flex items-center justify-center rounded border border-night-700 bg-night-900/60 p-2 transition hover:border-zinc-500 hover:bg-night-800">
+              <Image
+                src="/imssa-logo.png"
+                alt="IMSSA Logo"
+                width={120}
+                height={120}
+                className="h-10 w-auto object-contain opacity-80 hover:opacity-100"
+              />
+            </div>
+          </div>
+        </div>
       </div>
       <div className="border-t border-night-700/30 bg-night-page/50 py-4 text-center font-mono text-[10px] text-zinc-500 uppercase">
         © {new Date().getFullYear()} CODFEST INTRA-DEPARTMENTAL ESPORTS
@@ -64,3 +101,4 @@ export default function Footer() {
     </footer>
   );
 }
+

@@ -47,6 +47,7 @@ create table if not exists players (
   player_name text not null,
   email text not null default '',
   phone text not null default '',
+  im_number text not null default '',
   game_id text not null default '',
   is_substitute boolean not null default false
 );
