@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 interface MemberRow {
@@ -82,14 +82,23 @@ export default function RegisterPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  // Prevent flash: wait until we've checked the team before rendering Step 2
+  const [sessionChecked, setSessionChecked] = useState(false);
 
-  /* ─── When session loads, check if this captain already has a team ─── */
+  /* ─── On every page load: verify the session still has a team ─── */
   useEffect(() => {
-    if (!session) return;
+    if (status === "loading") return; // wait for NextAuth
+    if (!session) {
+      setSessionChecked(true);
+      return;
+    }
+
+    // Session exists — check whether this captain already submitted a team.
     fetch("/api/teams/my")
       .then((r) => r.json())
-      .then((json) => {
+      .then(async (json) => {
         if (json.team) {
+          // ✅ Team exists → stay logged in, load edit form
           setExistingTeamId(json.team.id);
           setTeamName(json.team.team_name ?? "");
           setCaptainPhone(json.team.phone ?? "");
@@ -97,10 +106,22 @@ export default function RegisterPage() {
             setMembers(json.players.map(memberFromPlayer));
           }
           setEditMode(true);
+          setSessionChecked(true);
+        } else {
+          // ❌ No team yet — sign out and ask for OTP re-verification.
+          // Pre-fill email so the leader only needs OTP (no name/IM again).
+          const email = session.user?.email ?? "";
+          await signOut({ redirect: false });
+          if (email) {
+            setEmailInput(email);
+            setStep1("returning");
+          }
+          setSessionChecked(true);
         }
       })
-      .catch(() => {});
-  }, [session]);
+      .catch(() => setSessionChecked(true));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);  // run once per page load (status goes loading → authenticated/unauthenticated)
 
   /* ─── Step 1a: check email → branch to new / returning ─── */
   async function checkEmail(e: React.FormEvent) {
@@ -318,7 +339,7 @@ export default function RegisterPage() {
 
   /* ───────────────── RENDER ───────────────────────────────────────────────── */
 
-  if (status === "loading") {
+  if (status === "loading" || !sessionChecked) {
     return <p className="mt-20 text-center text-zinc-500">Loading…</p>;
   }
 

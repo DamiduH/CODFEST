@@ -20,15 +20,31 @@ function getAdminEmails(): string[] {
     .filter(Boolean);
 }
 
+/** True only when real (non-placeholder) Google OAuth credentials are set. */
+function googleConfigured(): boolean {
+  const id = process.env.GOOGLE_CLIENT_ID ?? "";
+  const secret = process.env.GOOGLE_CLIENT_SECRET ?? "";
+  return (
+    id.length > 0 &&
+    secret.length > 0 &&
+    !id.startsWith("YOUR_") &&
+    !secret.startsWith("YOUR_")
+  );
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
-    // ── Google OAuth (admin sign-in) ──────────────────────────────────
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    }),
+    // ── Google OAuth (admin sign-in) — only when credentials are configured ──
+    ...(googleConfigured()
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+          }),
+        ]
+      : []),
 
     // ── Email / OTP credentials ───────────────────────────────────────
     CredentialsProvider({
@@ -37,8 +53,49 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
         otp: { label: "OTP", type: "text" },
+        firebase_token: { label: "Firebase ID Token", type: "text" },
       },
       async authorize(credentials) {
+        if (!credentials?.email && !credentials?.firebase_token) return null;
+
+        // ── Firebase Google sign-in path ──────────────────────────────
+        // The login page signs in with Firebase, gets an ID token, and
+        // passes it here. We verify it with the Firebase REST API
+        // (no firebase-admin SDK required) and check the email whitelist.
+        if (credentials?.firebase_token) {
+          const apiKey = process.env.FIREBASE_API_KEY;
+          if (!apiKey) return null;
+
+          try {
+            const verifyRes = await fetch(
+              `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ idToken: credentials.firebase_token }),
+              }
+            );
+            if (!verifyRes.ok) return null;
+            const verifyData = await verifyRes.json();
+            const firebaseUser = verifyData.users?.[0];
+            if (!firebaseUser?.email) return null;
+
+            const email = firebaseUser.email.toLowerCase().trim();
+            const adminEmails = getAdminEmails();
+            if (!adminEmails.includes(email)) return null;
+
+            return {
+              id: firebaseUser.localId,
+              name: firebaseUser.displayName ?? email,
+              email,
+              role: "admin" as Role,
+            };
+          } catch {
+            return null;
+          }
+        }
+
+        // ── Standard credentials path (OTP / password) ───────────────
         if (!credentials?.email) return null;
         const email = credentials.email.toLowerCase().trim();
 

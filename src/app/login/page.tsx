@@ -3,13 +3,14 @@
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signInWithPopup } from "firebase/auth";
+import { firebaseAuth, googleProvider } from "@/lib/firebase";
 
 /** Inner component — needs Suspense because it reads search params. */
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const googleError = searchParams.get("error") === "google_not_admin";
-  const googleMisconfigured = process.env.NEXT_PUBLIC_GOOGLE_CONFIGURED !== "true";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,6 +20,7 @@ function LoginForm() {
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
 
+  /* ── Password sign-in ─────────────────────────────────────────────── */
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -37,12 +39,43 @@ function LoginForm() {
     router.refresh();
   }
 
+  /* ── Firebase Google sign-in ──────────────────────────────────────── */
   async function onGoogleSignIn() {
     setGoogleBusy(true);
     setError(null);
-    await signIn("google", { callbackUrl: "/admin" });
-    // signIn redirects, so we won't reach here on success.
-    setGoogleBusy(false);
+    try {
+      // 1. Open Firebase Google popup
+      const result = await signInWithPopup(firebaseAuth, googleProvider);
+
+      // 2. Get Firebase ID token (verified server-side)
+      const idToken = await result.user.getIdToken();
+
+      // 3. Hand off to NextAuth credentials provider which verifies
+      //    the token + checks ADMIN_GOOGLE_EMAILS whitelist
+      const res = await signIn("credentials", {
+        firebase_token: idToken,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setError(
+          res.error === "CredentialsSignin"
+            ? "Your Google account is not on the admin whitelist. Add your email to ADMIN_GOOGLE_EMAILS in the env file."
+            : "Google sign-in failed. Try again."
+        );
+        return;
+      }
+
+      router.push("/admin");
+      router.refresh();
+    } catch (err: any) {
+      // User closed popup or other Firebase error
+      if (err?.code !== "auth/popup-closed-by-user") {
+        setError("Google sign-in failed: " + (err?.message ?? "Unknown error"));
+      }
+    } finally {
+      setGoogleBusy(false);
+    }
   }
 
   return (
@@ -61,16 +94,15 @@ function LoginForm() {
           </p>
         )}
 
-        {/* ── Google OAuth ─────────────────────────────────────────── */}
+        {/* ── Firebase Google Sign-In ──────────────────────────────── */}
         <button
           type="button"
           onClick={onGoogleSignIn}
-          disabled={googleBusy || googleMisconfigured}
-          title={googleMisconfigured ? "Google OAuth is not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env.local" : undefined}
+          disabled={googleBusy}
           className="flex w-full items-center justify-center gap-3 rounded border border-night-700 bg-night-850 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:border-zinc-500 hover:bg-night-700 disabled:opacity-50"
         >
           {googleBusy ? (
-            <span className="font-mono text-xs">Redirecting…</span>
+            <span className="font-mono text-xs">Signing in…</span>
           ) : (
             <>
               {/* Google "G" SVG logo */}
@@ -85,24 +117,15 @@ function LoginForm() {
             </>
           )}
         </button>
-        {googleMisconfigured && (
-          <p className="text-center font-mono text-[10px] text-amber-400">
-            ⚠ Google sign-in disabled — add real{" "}
-            <code className="text-amber-300">GOOGLE_CLIENT_ID</code> &amp;{" "}
-            <code className="text-amber-300">GOOGLE_CLIENT_SECRET</code> to{" "}
-            <code className="text-amber-300">.env.local</code> and set{" "}
-            <code className="text-amber-300">NEXT_PUBLIC_GOOGLE_CONFIGURED=true</code>
-          </p>
-        )}
 
-        {/* ── Divider ──────────────────────────────────────────────── */}
+        {/* ── Divider ─────────────────────────────────────────────── */}
         <div className="flex items-center gap-3">
           <div className="flex-1 border-t border-night-700" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-600">or</span>
           <div className="flex-1 border-t border-night-700" />
         </div>
 
-        {/* ── Password form ─────────────────────────────────────────── */}
+        {/* ── Password form ────────────────────────────────────────── */}
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="label">Admin email</label>
