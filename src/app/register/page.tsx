@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -84,21 +84,50 @@ export default function RegisterPage() {
   const [done, setDone] = useState(false);
   // Prevent flash: wait until we've checked the team before rendering Step 2
   const [sessionChecked, setSessionChecked] = useState(false);
+  // Guard: run the session check exactly ONCE after NextAuth resolves.
+  // Using a ref (not state) so it doesn't trigger re-renders.
+  const hasChecked = useRef(false);
 
-  /* ─── On every page load: verify the session still has a team ─── */
+  /* ─── Session check: allow access for 1 hour after OTP verification ──── */
   useEffect(() => {
-    if (status === "loading") return; // wait for NextAuth
+    // Wait for NextAuth to resolve.
+    if (status === "loading") return;
+    // Run ONCE only — the ref prevents re-running when signOut/signIn change
+    // status mid-session, which was causing the rapid OTP loop.
+    if (hasChecked.current) return;
+    hasChecked.current = true;
+
     if (!session) {
       setSessionChecked(true);
       return;
     }
 
-    // Session exists — check whether this captain already submitted a team.
+    // Read the timestamp written to sessionStorage after OTP verification.
+    // sessionStorage persists across refreshes (same tab) but clears on tab close.
+    const ONE_HOUR = 60 * 60 * 1000;
+    const raw = sessionStorage.getItem("captainVerifiedAt");
+    const verifiedAt = raw ? parseInt(raw, 10) : 0;
+    const withinWindow = Date.now() - verifiedAt < ONE_HOUR;
+
+    if (!withinWindow) {
+      // ⏰ Session older than 1 hour (or no timestamp) → sign out + re-verify
+      const email = session.user?.email ?? "";
+      sessionStorage.removeItem("captainVerifiedAt");
+      signOut({ redirect: false }).then(() => {
+        if (email) {
+          setEmailInput(email);
+          setStep1("returning");
+        }
+        setSessionChecked(true);
+      });
+      return;
+    }
+
+    // ✅ Within 1-hour window → check team status
     fetch("/api/teams/my")
       .then((r) => r.json())
-      .then(async (json) => {
+      .then((json) => {
         if (json.team) {
-          // ✅ Team exists → stay logged in, load edit form
           setExistingTeamId(json.team.id);
           setTeamName(json.team.team_name ?? "");
           setCaptainPhone(json.team.phone ?? "");
@@ -106,22 +135,12 @@ export default function RegisterPage() {
             setMembers(json.players.map(memberFromPlayer));
           }
           setEditMode(true);
-          setSessionChecked(true);
-        } else {
-          // ❌ No team yet — sign out and ask for OTP re-verification.
-          // Pre-fill email so the leader only needs OTP (no name/IM again).
-          const email = session.user?.email ?? "";
-          await signOut({ redirect: false });
-          if (email) {
-            setEmailInput(email);
-            setStep1("returning");
-          }
-          setSessionChecked(true);
         }
+        // No team yet but within 1-hour window → show registration form
+        setSessionChecked(true);
       })
       .catch(() => setSessionChecked(true));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);  // run once per page load (status goes loading → authenticated/unauthenticated)
+  }, [status]); // depends on status so it fires when NextAuth resolves
 
   /* ─── Step 1a: check email → branch to new / returning ─── */
   async function checkEmail(e: React.FormEvent) {
@@ -235,12 +254,30 @@ export default function RegisterPage() {
         setError(map[signed.error] ?? "Invalid OTP");
         return;
       }
-      // Clear leader identity — never persisted across refreshes
+      // ⏰ Stamp verification time — session is valid for 1 hour from now.
+      // sessionStorage persists across page refreshes (same tab) so the
+      // leader can refresh without being asked for OTP again within 1 hour.
+      sessionStorage.setItem("captainVerifiedAt", Date.now().toString());
+      // Clear leader identity fields (never persisted across refreshes)
       setEmailInput("");
       setLeaderName("");
       setLeaderIm("");
       setPendingVerify(null);
-      router.refresh();
+      setStep1("email");     // reset step state
+      setSessionChecked(true); // skip the mount-time check (already done)
+      // Trigger team check immediately to move to Step 2
+      fetch("/api/teams/my")
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.team) {
+            setExistingTeamId(json.team.id);
+            setTeamName(json.team.team_name ?? "");
+            setCaptainPhone(json.team.phone ?? "");
+            if (json.players?.length) setMembers(json.players.map(memberFromPlayer));
+            setEditMode(true);
+          }
+        })
+        .catch(() => {});
     } catch {
       setError("Could not verify OTP");
     } finally {
