@@ -9,6 +9,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const googleError = searchParams.get("error") === "google_not_admin";
+  const googleMisconfigured = process.env.NEXT_PUBLIC_GOOGLE_CONFIGURED !== "true";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,7 +65,8 @@ function LoginForm() {
         <button
           type="button"
           onClick={onGoogleSignIn}
-          disabled={googleBusy}
+          disabled={googleBusy || googleMisconfigured}
+          title={googleMisconfigured ? "Google OAuth is not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env.local" : undefined}
           className="flex w-full items-center justify-center gap-3 rounded border border-night-700 bg-night-850 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:border-zinc-500 hover:bg-night-700 disabled:opacity-50"
         >
           {googleBusy ? (
@@ -83,6 +85,15 @@ function LoginForm() {
             </>
           )}
         </button>
+        {googleMisconfigured && (
+          <p className="text-center font-mono text-[10px] text-amber-400">
+            ⚠ Google sign-in disabled — add real{" "}
+            <code className="text-amber-300">GOOGLE_CLIENT_ID</code> &amp;{" "}
+            <code className="text-amber-300">GOOGLE_CLIENT_SECRET</code> to{" "}
+            <code className="text-amber-300">.env.local</code> and set{" "}
+            <code className="text-amber-300">NEXT_PUBLIC_GOOGLE_CONFIGURED=true</code>
+          </p>
+        )}
 
         {/* ── Divider ──────────────────────────────────────────────── */}
         <div className="flex items-center gap-3">

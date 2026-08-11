@@ -8,9 +8,10 @@ interface MemberRow {
   member_name: string;
   email: string;
   phone: string;
+  im_number: string;
 }
 
-const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "" });
+const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "", im_number: "" });
 
 /** Progress bar for the two-step flow. */
 function StepBar({ step }: { step: 1 | 2 }) {
@@ -111,6 +112,8 @@ export default function RegisterPage() {
         setError(map[signed.error] ?? "Invalid OTP");
         return;
       }
+      // Clear leader identity so it is never persisted across refreshes
+      setAcc({ name: "", email: "" });
       setPendingVerify(null);
       router.refresh();
     } catch {
@@ -162,6 +165,7 @@ export default function RegisterPage() {
         player_name: m.member_name,
         email: m.email,
         phone: m.phone,
+        im_number: m.im_number,
         game_id: "",
         is_substitute: false,
       })),
@@ -350,7 +354,7 @@ export default function RegisterPage() {
             <input
               className="input"
               required
-              placeholder="+91 XXXXX XXXXX"
+              placeholder="+94 XXX XXX XXXX"
               value={captainPhone}
               onChange={(e) => setCaptainPhone(e.target.value)}
             />
@@ -393,7 +397,7 @@ export default function RegisterPage() {
                 <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-zinc-600">
                   Member {i + 1}
                 </p>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <label className="label text-[11px]">Full name</label>
                     <input
@@ -422,11 +426,23 @@ export default function RegisterPage() {
                     <label className="label text-[11px]">Mobile number</label>
                     <input
                       className="input"
-                      placeholder="+91 XXXXX XXXXX"
+                      placeholder="+94 XXX XXX XXXX"
                       required
                       value={m.phone}
                       onChange={(e) =>
                         setMembers(members.map((x, j) => (j === i ? { ...x, phone: e.target.value } : x)))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="label text-[11px]">IM Number</label>
+                    <input
+                      className="input"
+                      placeholder="IM_NUMBER"
+                      required
+                      value={m.im_number}
+                      onChange={(e) =>
+                        setMembers(members.map((x, j) => (j === i ? { ...x, im_number: e.target.value } : x)))
                       }
                     />
                   </div>

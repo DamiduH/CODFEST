@@ -7,6 +7,19 @@ import { db } from "@/lib/supabase";
 import { isOtpTestMode, TEST_OTP } from "@/lib/email";
 import type { Role } from "@/lib/types";
 
+/**
+ * Returns the whitelist of Gmail addresses that are allowed to sign in
+ * as admins via Google OAuth. Defined in the env as a comma-separated list:
+ *   ADMIN_GOOGLE_EMAILS=alice@gmail.com,bob@gmail.com
+ */
+function getAdminEmails(): string[] {
+  const raw = process.env.ADMIN_GOOGLE_EMAILS ?? "";
+  return raw
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
@@ -85,26 +98,22 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     /**
-     * signIn callback — gate Google logins to users that already exist in
-     * the DB with role="admin". Unknown Google accounts are rejected.
+     * signIn callback — gate Google logins to the ADMIN_GOOGLE_EMAILS
+     * whitelist defined in the environment file.
+     * Add emails to that variable (comma-separated) to grant admin access.
      */
     async signIn({ user, account }) {
       // Credentials provider: always allowed (authorize() handles validation).
       if (account?.provider === "credentials") return true;
 
-      // Google provider: the email must belong to an admin in our DB.
+      // Google provider: email must appear in the ADMIN_GOOGLE_EMAILS whitelist.
       if (account?.provider === "google" && user.email) {
-        const { data: dbUser } = await db()
-          .from("users")
-          .select("id, role")
-          .eq("email", user.email.toLowerCase().trim())
-          .maybeSingle();
-        if (!dbUser || dbUser.role !== "admin") {
-          // Return a URL string to redirect to an error page.
+        const adminEmails = getAdminEmails();
+        const email = user.email.toLowerCase().trim();
+        if (!adminEmails.includes(email)) {
+          // Redirect to error page — not in the whitelist.
           return "/login?error=google_not_admin";
         }
-        // Attach DB id so jwt() can pick it up.
-        (user as any)._dbId = dbUser.id;
       }
 
       return true;
@@ -117,10 +126,10 @@ export const authOptions: NextAuthOptions = {
           token.id = (user as any).id;
           token.role = (user as any).role;
         }
-        // Google provider: id was stashed in _dbId; role is always admin
-        // (signIn callback guarantees this).
+        // Google provider: signIn() already checked the whitelist, so anyone
+        // who reaches here is an admin. Use the Google sub as the token id.
         if (account?.provider === "google") {
-          token.id = (user as any)._dbId ?? user.id;
+          token.id = user.id; // Google sub (unique per Google account)
           token.role = "admin" as Role;
         }
       }
