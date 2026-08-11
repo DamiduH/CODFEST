@@ -43,14 +43,29 @@ function StepBar({ step }: { step: 1 | 2 }) {
   );
 }
 
+// ─── Step 1 sub-states ────────────────────────────────────────────────────────
+// "email"     → only the email field is shown (initial landing)
+// "new"       → new user: show name + IM number + email (pre-filled, locked)
+// "returning" → returning leader with no team: show OTP-request button only
+// "otp"       → OTP entry form
+type Step1State = "email" | "new" | "returning" | "otp";
+
 export default function RegisterPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Step 1 — captain identity (cleared after OTP, never persisted)
-  const [acc, setAcc] = useState({ name: "", email: "", im_number: "" });
+  // ── Step 1 state ──
+  const [step1, setStep1] = useState<Step1State>("email");
+  const [emailInput, setEmailInput] = useState("");
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  // Full details (name + IM) — only needed for new users
+  const [leaderName, setLeaderName] = useState("");
+  const [leaderIm, setLeaderIm] = useState("");
+  // OTP
+  const [pendingVerify, setPendingVerify] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
 
-  // Step 2 — team details
+  // ── Step 2 state ──
   const [teamName, setTeamName] = useState("");
   const [captainPhone, setCaptainPhone] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
@@ -67,8 +82,6 @@ export default function RegisterPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  const [pendingVerify, setPendingVerify] = useState<string | null>(null);
-  const [otp, setOtp] = useState("");
 
   /* ─── When session loads, check if this captain already has a team ─── */
   useEffect(() => {
@@ -89,8 +102,36 @@ export default function RegisterPage() {
       .catch(() => {});
   }, [session]);
 
-  /* ─── Step 1: send OTP ─── */
-  async function startOtp(e: React.FormEvent) {
+  /* ─── Step 1a: check email → branch to new / returning ─── */
+  async function checkEmail(e: React.FormEvent) {
+    e.preventDefault();
+    const email = emailInput.trim().toLowerCase();
+    if (!email) return;
+    setCheckingEmail(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
+      const json = await res.json();
+
+      if (!json.exists) {
+        // Brand new — ask for name + IM number
+        setStep1("new");
+      } else if (json.hasTeam) {
+        // Has a team already — they should just log in via email to edit
+        setStep1("returning");
+      } else {
+        // Verified captain, no team yet — skip name/IM, just send OTP
+        setStep1("returning");
+      }
+    } catch {
+      setError("Could not reach the server. Try again.");
+    } finally {
+      setCheckingEmail(false);
+    }
+  }
+
+  /* ─── Step 1b: send OTP (new user with name + IM) ─── */
+  async function startOtpNew(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
@@ -99,24 +140,52 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: acc.name, email: acc.email }),
+        body: JSON.stringify({ name: leaderName, email: emailInput.trim() }),
       });
       const text = await res.text();
       let json: { error?: string; needsVerification?: boolean; message?: string } = {};
-      try {
-        json = text ? JSON.parse(text) : {};
-      } catch {
-        setError(res.ok ? "Unexpected server response" : `Server error (${res.status})`);
-        return;
-      }
+      try { json = text ? JSON.parse(text) : {}; } catch { /* ignore */ }
+
       if (!res.ok && !json.needsVerification) {
         setError(json.error ?? "Could not start registration");
         return;
       }
-      if (json.error && json.needsVerification) setInfo(json.error);
-      else if (json.message) setInfo(json.message);
-      setPendingVerify(acc.email);
+      if (json.message) setInfo(json.message);
+      setPendingVerify(emailInput.trim().toLowerCase());
       setOtp(process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" ? "000000" : "");
+      setStep1("otp");
+    } catch {
+      setError("Network error — could not reach the server");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /* ─── Step 1b: send OTP (returning leader — email only) ─── */
+  async function startOtpReturning(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    try {
+      // We pass a dummy name so the schema validates — the server ignores it for verified users
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "leader", email: emailInput.trim() }),
+      });
+      const text = await res.text();
+      let json: { error?: string; needsVerification?: boolean; message?: string; returning?: boolean } = {};
+      try { json = text ? JSON.parse(text) : {}; } catch { /* ignore */ }
+
+      if (!res.ok && !json.needsVerification) {
+        setError(json.error ?? "Could not send OTP");
+        return;
+      }
+      if (json.message) setInfo(json.message);
+      setPendingVerify(emailInput.trim().toLowerCase());
+      setOtp(process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" ? "000000" : "");
+      setStep1("otp");
     } catch {
       setError("Network error — could not reach the server");
     } finally {
@@ -145,8 +214,10 @@ export default function RegisterPage() {
         setError(map[signed.error] ?? "Invalid OTP");
         return;
       }
-      // Clear leader identity so it is never persisted across refreshes
-      setAcc({ name: "", email: "", im_number: "" });
+      // Clear leader identity — never persisted across refreshes
+      setEmailInput("");
+      setLeaderName("");
+      setLeaderIm("");
       setPendingVerify(null);
       router.refresh();
     } catch {
@@ -183,15 +254,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
     if (!agreed) return setError("You must accept the rules and code of conduct");
-    if (members.some((m) => !m.member_name)) {
-      return setError("Every player needs a name");
-    }
+    if (members.some((m) => !m.member_name)) return setError("Every player needs a name");
     setBusy(true);
 
     const payload = {
       team_name: teamName,
       phone: captainPhone,
-      email: session?.user?.email ?? acc.email,
+      email: session?.user?.email ?? "",
       agreed: true,
       players: members.map((m) => ({
         player_name: m.member_name,
@@ -219,9 +288,7 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!existingTeamId) return;
     setError(null);
-    if (members.some((m) => !m.member_name)) {
-      return setError("Every player needs a name");
-    }
+    if (members.some((m) => !m.member_name)) return setError("Every player needs a name");
     setBusy(true);
 
     const body = {
@@ -246,9 +313,11 @@ export default function RegisterPage() {
     setBusy(false);
     if (!res.ok) return setError(json.error ?? "Could not save changes");
     setEditSuccess(true);
+    setError(null);
   }
 
-  /* ─── Loading ─── */
+  /* ───────────────── RENDER ───────────────────────────────────────────────── */
+
   if (status === "loading") {
     return <p className="mt-20 text-center text-zinc-500">Loading…</p>;
   }
@@ -272,7 +341,7 @@ export default function RegisterPage() {
   }
 
   /* ─── OTP verification screen ─── */
-  if (pendingVerify) {
+  if (step1 === "otp" && pendingVerify) {
     return (
       <div className="mx-auto max-w-md px-4 py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
@@ -288,7 +357,7 @@ export default function RegisterPage() {
         </p>
         {process.env.NEXT_PUBLIC_OTP_TEST_MODE === "true" && (
           <p className="mt-2 text-center font-mono text-xs text-amber-300">
-            CHECKING MODE — use OTP <strong>000000</strong>
+            TEST MODE — use OTP <strong>000000</strong>
           </p>
         )}
         <form onSubmit={verifyOtp} className="card mt-8 space-y-4 p-6">
@@ -321,13 +390,20 @@ export default function RegisterPage() {
           <button type="button" className="btn-ghost w-full" disabled={busy} onClick={resendVerification}>
             {busy ? "Sending…" : "Resend OTP"}
           </button>
+          <button
+            type="button"
+            className="w-full text-center font-mono text-[11px] text-zinc-600 hover:text-zinc-400"
+            onClick={() => { setStep1("email"); setError(null); setInfo(null); setPendingVerify(null); }}
+          >
+            ← Use a different email
+          </button>
         </form>
       </div>
     );
   }
 
-  /* ─── Step 1: captain email + OTP start ─── */
-  if (!session) {
+  /* ─── Step 1: email-only landing (initial check) ─── */
+  if (!session && step1 === "email") {
     return (
       <div className="mx-auto max-w-md px-4 py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
@@ -338,26 +414,15 @@ export default function RegisterPage() {
         </div>
         <StepBar step={1} />
         <p className="mt-4 text-center text-sm text-zinc-500">
-          Only the <strong className="text-zinc-300">team leader</strong> registers. Enter your
-          details — we&apos;ll send a one-time code. No password required.
+          Only the <strong className="text-zinc-300">team leader</strong> registers.
+          Enter your email to get started.
         </p>
-        <form onSubmit={startOtp} className="card mt-8 space-y-4 p-6">
+        <form onSubmit={checkEmail} className="card mt-8 space-y-4 p-6">
           {error && (
             <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
               {error}
             </p>
           )}
-          <div>
-            <label className="label">Leader&apos;s full name</label>
-            <input
-              className="input"
-              placeholder="FULL_NAME"
-              required
-              minLength={2}
-              value={acc.name}
-              onChange={(e) => setAcc({ ...acc, name: e.target.value })}
-            />
-          </div>
           <div>
             <label className="label">Leader&apos;s email</label>
             <input
@@ -365,22 +430,122 @@ export default function RegisterPage() {
               placeholder="LEADER@DOMAIN"
               type="email"
               required
-              value={acc.email}
-              onChange={(e) => setAcc({ ...acc, email: e.target.value })}
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+            />
+          </div>
+          <button className="btn-primary w-full" disabled={checkingEmail}>
+            {checkingEmail ? "Checking…" : "Continue →"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  /* ─── Step 1: new user — collect name + IM number ─── */
+  if (!session && step1 === "new") {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16">
+        <div className="border-l-4 border-l-ember-400 pl-4">
+          <h1 className="section-title">Squad Registration</h1>
+          <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
+            // NEW TEAM LEADER
+          </p>
+        </div>
+        <StepBar step={1} />
+        <p className="mt-4 text-center text-sm text-zinc-500">
+          Fill in your details — we&apos;ll send a one-time code to verify your email.
+        </p>
+        <form onSubmit={startOtpNew} className="card mt-8 space-y-4 p-6">
+          {error && (
+            <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
+              {error}
+            </p>
+          )}
+          {/* Email locked — already entered */}
+          <div>
+            <label className="label">Leader&apos;s email</label>
+            <input
+              className="input opacity-60 cursor-not-allowed"
+              type="email"
+              value={emailInput}
+              readOnly
             />
           </div>
           <div>
-            <label className="label">Leader&apos;s IM Number</label>
+            <label className="label">Full name</label>
+            <input
+              className="input"
+              placeholder="FULL_NAME"
+              required
+              minLength={2}
+              value={leaderName}
+              onChange={(e) => setLeaderName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label">IM Number</label>
             <input
               className="input"
               placeholder="IM_NUMBER"
               required
-              value={acc.im_number}
-              onChange={(e) => setAcc({ ...acc, im_number: e.target.value })}
+              value={leaderIm}
+              onChange={(e) => setLeaderIm(e.target.value)}
             />
           </div>
           <button className="btn-primary w-full" disabled={busy}>
             {busy ? "Sending OTP…" : "Send OTP →"}
+          </button>
+          <button
+            type="button"
+            className="w-full text-center font-mono text-[11px] text-zinc-600 hover:text-zinc-400"
+            onClick={() => { setStep1("email"); setError(null); }}
+          >
+            ← Change email
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  /* ─── Step 1: returning leader — OTP re-login ─── */
+  if (!session && step1 === "returning") {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16">
+        <div className="border-l-4 border-l-ember-400 pl-4">
+          <h1 className="section-title">Welcome Back</h1>
+          <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
+            // RETURNING LEADER — OTP RE-LOGIN
+          </p>
+        </div>
+        <StepBar step={1} />
+
+        <div className="mt-4 border border-ember-400/30 bg-ember-600/10 px-4 py-3 font-mono text-xs text-ember-300">
+          ✓ Your account was found for{" "}
+          <strong className="text-ember-400">{emailInput}</strong>.
+          Click below to receive a sign-in code and continue your registration.
+        </div>
+
+        <form onSubmit={startOtpReturning} className="card mt-6 space-y-4 p-6">
+          {error && (
+            <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
+              {error}
+            </p>
+          )}
+          {info && (
+            <p className="border border-ember-600/40 bg-ember-600/10 px-3 py-2 font-mono text-xs text-ember-400">
+              {info}
+            </p>
+          )}
+          <button className="btn-primary w-full" disabled={busy}>
+            {busy ? "Sending OTP…" : "Send OTP to my email →"}
+          </button>
+          <button
+            type="button"
+            className="w-full text-center font-mono text-[11px] text-zinc-600 hover:text-zinc-400"
+            onClick={() => { setStep1("email"); setError(null); setInfo(null); }}
+          >
+            ← Use a different email
           </button>
         </form>
       </div>
@@ -411,7 +576,7 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {isEdit && (
+      {isEdit && !editSuccess && (
         <div className="mt-4 border border-ember-400/30 bg-ember-600/10 px-4 py-3 font-mono text-xs text-ember-300">
           ✏ You&apos;re editing your existing team. Changes take effect immediately.
         </div>

@@ -39,9 +39,32 @@ export async function POST(req: Request) {
     }
 
     if (existing?.email_verified) {
+      // Returning leader — they verified before but have no active session (e.g. page refresh).
+      // Issue a fresh OTP so they can log back in and continue team registration.
+      const otp = generateOtp();
+      const expires = otpExpiresAt();
+      await db()
+        .from("users")
+        .update({ email_verify_token: otp, email_verify_expires: expires })
+        .eq("id", existing.id);
+
+      let mailError: string | null = null;
+      try {
+        mailError = await sendVerificationOtp(email, parsed.data.name, otp);
+      } catch (e) {
+        mailError = e instanceof Error ? e.message : "Email send failed";
+      }
+
       return NextResponse.json(
-        { error: "This email is already registered. Use OTP sign-in if you need to access your squad." },
-        { status: 409 }
+        {
+          message: mailError
+            ? `OTP email failed: ${mailError}`
+            : "Welcome back! OTP sent — enter the code to continue.",
+          needsVerification: true,
+          returning: true,
+          error: mailError ?? undefined,
+        },
+        { status: 200 }
       );
     }
 
