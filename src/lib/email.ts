@@ -26,8 +26,393 @@ export function otpExpiresAt(): string {
   return new Date(Date.now() + 15 * 60 * 1000).toISOString();
 }
 
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+function getOtpEmailHtml(name: string, otp: string): string {
+  const formattedOtp = otp.split("").join(" ");
+  const escapedName = escapeHtml(name);
+
+  return `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>CODFEST - Verify Your Email</title>
+<!--[if mso]>
+<noscript>
+<xml>
+<o:OfficeDocumentSettings>
+<o:PixelsPerInch>96</o:PixelsPerInch>
+</o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  body { margin: 0; padding: 0; width: 100% !important; height: 100% !important; background-color: #f2f4ef; font-family: 'Poppins', Arial, Helvetica, sans-serif; }
+
+  .otp-box {
+    font-family: 'Poppins', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    letter-spacing: 10px;
+    color: #000000;
+    background-color: #eaffce;
+    border: 2px dashed #8cfd30;
+    border-radius: 10px;
+    padding: 18px 10px;
+  }
+
+  @media only screen and (max-width: 600px) {
+    .container { width: 100% !important; }
+    .fluid { max-width: 100% !important; height: auto !important; }
+    .otp-box { font-size: 30px !important; letter-spacing: 6px !important; }
+    .px-24 { padding-left: 24px !important; padding-right: 24px !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#f2f4ef;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
+    Your CODFEST verification code is inside. It expires in 15 minutes.
+  </div>
+
+  <center style="width:100%; background-color:#f2f4ef;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f2f4ef;">
+      <tr>
+        <td style="padding: 32px 16px;">
+
+          <table role="presentation" cellpadding="0" cellspacing="0" width="600" class="container" align="center" style="max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #e5e8df;">
+
+            <!-- Header / Logo -->
+            <tr>
+              <td align="center" style="background-color:#000000; padding: 36px 24px;" class="px-24">
+                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/logo.png" alt="CODFEST Logo" width="160" class="fluid" style="display:block; width:160px; max-width:60%; height:auto; margin:0 auto;">
+              </td>
+            </tr>
+
+            <!-- Green accent strip -->
+            <tr>
+              <td style="height:6px; line-height:6px; font-size:0; background-color:#8cfd30;">&nbsp;</td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td class="px-24" style="padding: 40px 40px 16px 40px;">
+                <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:13px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#8b9a7a;">
+                  Email Verification
+                </p>
+                <h1 style="margin:0 0 20px 0; font-family:'Poppins', Arial, sans-serif; font-size:26px; font-weight:800; color:#000000; line-height:1.3;">
+                  Verify your email to secure your CODFEST account
+                </h1>
+                <p style="margin:0 0 28px 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; line-height:1.7; color:#3a3a3a;">
+                  Hi ${escapedName},<br><br>
+                  Use the One-Time Password (OTP) below to verify your email address and continue registering for <strong>CODFEST</strong>. This code is valid for the next <strong>15 minutes</strong>.
+                </p>
+              </td>
+            </tr>
+
+            <!-- OTP Box -->
+            <tr>
+              <td align="center" class="px-24" style="padding: 0 40px 32px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" align="center">
+                  <tr>
+                    <td class="otp-box" align="center">
+                      ${formattedOtp}
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:16px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:13px; color:#8b9a7a;">
+                  This code expires in 15 minutes.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Security note -->
+            <tr>
+              <td class="px-24" style="padding: 0 40px 40px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f2f4ef; border-left:4px solid #8cfd30; border-radius:6px;">
+                  <tr>
+                    <td style="padding:16px 18px;">
+                      <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:13px; line-height:1.6; color:#4a4a4a;">
+                        Didn't request this code? You can safely ignore this email — no changes will be made to your account. Never share this OTP with anyone, including CODFEST staff.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Divider -->
+            <tr>
+              <td class="px-24" style="padding: 0 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                  <tr><td style="border-top:1px solid #e5e8df; font-size:0; line-height:0;">&nbsp;</td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td align="center" class="px-24" style="padding: 32px 40px 12px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" align="center">
+                  <tr>
+                    <td style="padding: 0 14px;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/imssa-logo.png" alt="IMSSA Logo" height="42" style="display:block; height:42px; width:auto;">
+                    </td>
+                    <td style="padding: 0 14px;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT-IT Logo" height="42" style="display:block; height:42px; width:auto;">
+                    </td>
+                    <td style="padding: 0 14px;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/uok-crest.png" alt="University of Kelaniya Crest" height="42" style="display:block; height:42px; width:auto;">
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" class="px-24" style="padding: 4px 40px 36px 40px;">
+                <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
+                  Organized by IMSSA &amp; MIT-IT, Faculty of Commerce and Management Studies
+                </p>
+                <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
+                  University of Kelaniya &middot; <a href="https://codfestmit.vercel.app/" style="color:#000000; text-decoration:underline;">codfestmit.vercel.app</a>
+                </p>
+              </td>
+            </tr>
+
+          </table>
+
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>`;
+}
+
+interface WelcomeEmailProps {
+  name: string;
+  teamName: string;
+  regId: string;
+  date?: string;
+  time?: string;
+  venue?: string;
+}
+
+function getWelcomeEmailHtml({
+  name,
+  teamName,
+  regId,
+  date = "Sept 01, 2026",
+  time = "06:00 PM (+05:30)",
+  venue = "Online / CODFEST Platform",
+}: WelcomeEmailProps): string {
+  const escapedName = escapeHtml(name);
+  const escapedTeamName = escapeHtml(teamName);
+  const displayRegId = `${escapedTeamName} (${regId.slice(0, 8).toUpperCase()})`;
+
+  return `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Welcome to CODFEST</title>
+<!--[if mso]>
+<noscript>
+<xml>
+<o:OfficeDocumentSettings>
+<o:PixelsPerInch>96</o:PixelsPerInch>
+</o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  body { margin: 0; padding: 0; width: 100% !important; height: 100% !important; background-color: #f2f4ef; font-family: 'Poppins', Arial, Helvetica, sans-serif; }
+
+  .btn:hover { opacity: 0.9; }
+
+  @media only screen and (max-width: 600px) {
+    .container { width: 100% !important; }
+    .fluid { max-width: 100% !important; height: auto !important; }
+    .stack-column { display: block !important; width: 100% !important; }
+    .px-24 { padding-left: 24px !important; padding-right: 24px !important; }
+    .info-cell { display: block !important; width: 100% !important; padding: 10px 0 !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#f2f4ef;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
+    You're officially registered for CODFEST — get ready for an unforgettable event!
+  </div>
+
+  <center style="width:100%; background-color:#f2f4ef;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f2f4ef;">
+      <tr>
+        <td style="padding: 32px 16px;">
+
+          <table role="presentation" cellpadding="0" cellspacing="0" width="600" class="container" align="center" style="max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #e5e8df;">
+
+            <!-- Header / Logo -->
+            <tr>
+              <td align="center" style="background-color:#000000; padding: 36px 24px;" class="px-24">
+                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/logo.png" alt="CODFEST Logo" width="170" class="fluid" style="display:block; width:170px; max-width:60%; height:auto; margin:0 auto;">
+              </td>
+            </tr>
+
+            <!-- Green hero band -->
+            <tr>
+              <td align="center" style="background-color:#8cfd30; padding: 26px 24px;" class="px-24">
+                <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:14px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#000000;">
+                  Registration Confirmed 🎉
+                </p>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td class="px-24" style="padding: 40px 40px 16px 40px;">
+                <h1 style="margin:0 0 20px 0; font-family:'Poppins', Arial, sans-serif; font-size:28px; font-weight:800; color:#000000; line-height:1.3;">
+                  Welcome to CODFEST!
+                </h1>
+                <p style="margin:0 0 20px 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; line-height:1.7; color:#3a3a3a;">
+                  Hi <strong>${escapedName}</strong>,<br><br>
+                  Thanks for registering — you're officially in! We're excited to have you join us for a day of coding, competition, and creativity. Get ready to build, compete, and connect with fellow tech enthusiasts.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Event details card -->
+            <tr>
+              <td class="px-24" style="padding: 0 40px 32px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f2f4ef; border-radius:10px; border:1px solid #e5e8df;">
+                  <tr>
+                    <td style="padding: 22px 24px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <td class="info-cell" width="50%" valign="top" style="padding: 8px 0;">
+                            <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#8b9a7a;">Date</p>
+                            <p style="margin:4px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:600; color:#000000;">${escapeHtml(date)}</p>
+                          </td>
+                          <td class="info-cell" width="50%" valign="top" style="padding: 8px 0;">
+                            <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#8b9a7a;">Time</p>
+                            <p style="margin:4px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:600; color:#000000;">${escapeHtml(time)}</p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="info-cell" width="50%" valign="top" style="padding: 8px 0;">
+                            <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#8b9a7a;">Venue</p>
+                            <p style="margin:4px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:600; color:#000000;">${escapeHtml(venue)}</p>
+                          </td>
+                          <td class="info-cell" width="50%" valign="top" style="padding: 8px 0;">
+                            <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#8b9a7a;">Team / ID</p>
+                            <p style="margin:4px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:600; color:#000000;">${displayRegId}</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- CTA Button -->
+            <tr>
+              <td align="center" class="px-24" style="padding: 0 40px 40px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" align="center">
+                  <tr>
+                    <td align="center" class="btn" style="background-color:#000000; border-radius:8px;">
+                      <a href="https://codfestmit.vercel.app/" target="_blank" style="display:inline-block; padding:15px 36px; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:700; color:#8cfd30; text-decoration:none; border-radius:8px;">
+                        View Event Details
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- What's next -->
+            <tr>
+              <td class="px-24" style="padding: 0 40px 40px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f2f4ef; border-left:4px solid #8cfd30; border-radius:6px;">
+                  <tr>
+                    <td style="padding:16px 18px;">
+                      <p style="margin:0 0 8px 0; font-family:'Poppins', Arial, sans-serif; font-size:13px; font-weight:700; color:#000000;">
+                        What's next?
+                      </p>
+                      <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:13px; line-height:1.7; color:#4a4a4a;">
+                        Keep an eye on your inbox — we'll send schedule updates, venue guides, and important announcements as the event gets closer.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Divider -->
+            <tr>
+              <td class="px-24" style="padding: 0 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                  <tr><td style="border-top:1px solid #e5e8df; font-size:0; line-height:0;">&nbsp;</td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td align="center" class="px-24" style="padding: 32px 40px 12px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" align="center">
+                  <tr>
+                    <td style="padding: 0 14px;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/imssa-logo.png" alt="IMSSA Logo" height="42" style="display:block; height:42px; width:auto;">
+                    </td>
+                    <td style="padding: 0 14px;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT-IT Logo" height="42" style="display:block; height:42px; width:auto;">
+                    </td>
+                    <td style="padding: 0 14px;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/uok-crest.png" alt="University of Kelaniya Crest" height="42" style="display:block; height:42px; width:auto;">
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" class="px-24" style="padding: 4px 40px 36px 40px;">
+                <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
+                  Organized by IMSSA &amp; MIT-IT, Faculty of Commerce and Management Studies
+                </p>
+                <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
+                  University of Kelaniya &middot; <a href="https://codfestmit.vercel.app/" style="color:#000000; text-decoration:underline;">codfestmit.vercel.app</a>
+                </p>
+              </td>
+            </tr>
+
+          </table>
+
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>`;
+}
+
 /**
- * Sends the email OTP.
+ * Sends the email OTP using the official CODFEST HTML email template.
  * In test/checking mode, skips Resend and returns success (use OTP 000000).
  */
 export async function sendVerificationOtp(to: string, name: string, otp: string): Promise<string | null> {
@@ -41,22 +426,40 @@ export async function sendVerificationOtp(to: string, name: string, otp: string)
   const { error } = await resendClient().emails.send({
     from,
     to,
-    subject: "CODFEST — Your verification code",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#0a0f0a;color:#d4e0d4;padding:32px;border:1px solid #2a3a2a">
-        <p style="color:#71e000;font-size:12px;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 12px">CODFEST // ACCESS CLEARANCE</p>
-        <h1 style="color:#8cfd30;font-size:22px;margin:0 0 16px">Your verification code</h1>
-        <p style="margin:0 0 12px">Hi ${escapeHtml(name)},</p>
-        <p style="margin:0 0 20px">Enter this code on the registration page to activate your captain account:</p>
-        <p style="margin:0 0 24px;font-size:36px;font-weight:700;letter-spacing:0.35em;color:#8cfd30;font-family:Consolas,monospace">${otp}</p>
-        <p style="margin:0;font-size:12px;color:#8a9a8a">This code expires in 15 minutes. If you did not create a CODFEST account, ignore this message.</p>
-      </div>
-    `,
+    subject: "CODFEST — Verify Your Email",
+    html: getOtpEmailHtml(name, otp),
   });
 
   return error?.message ?? null;
 }
 
-function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+/**
+ * Sends the Welcome / Registration Confirmation Email to team captain.
+ */
+export async function sendWelcomeEmail({
+  to,
+  name,
+  teamName,
+  regId,
+}: {
+  to: string;
+  name: string;
+  teamName: string;
+  regId: string;
+}): Promise<string | null> {
+  if (isOtpTestMode()) {
+    console.info(`[OTP_TEST_MODE] Skipping welcome email to ${to} (${name}).`);
+    return null;
+  }
+
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+
+  const { error } = await resendClient().emails.send({
+    from,
+    to,
+    subject: "Welcome to CODFEST — Registration Confirmed! 🎉",
+    html: getWelcomeEmailHtml({ name, teamName, regId }),
+  });
+
+  return error?.message ?? null;
 }
