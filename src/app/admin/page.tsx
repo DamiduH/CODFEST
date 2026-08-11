@@ -32,7 +32,7 @@ export default function AdminPage() {
   if (status === "loading") return <p className="mt-20 text-center text-zinc-500">Loading…</p>;
   if (session?.user?.role !== "admin") {
     return (
-      <div className="mx-auto max-w-md px-4 py-20 text-center">
+      <div className="site-gutter mx-auto max-w-md py-20 text-center">
         <h1 className="section-title">Admins only</h1>
         <p className="mt-3 text-zinc-400">This area requires an administrator account.</p>
         <Link href="/login" className="btn-primary mt-6">Sign in</Link>
@@ -41,7 +41,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10">
+    <div className="site-gutter mx-auto max-w-7xl py-10">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-night-700 pb-4">
         <div>
           <h1 className="section-title">HQ Command</h1>

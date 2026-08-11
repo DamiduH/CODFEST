@@ -48,27 +48,7 @@ export default function Hero({
           <div className="absolute inset-0 z-10 bg-gradient-to-b from-transparent via-transparent to-ember-600/10" />
         </div>
 
-        {/* HUD decorations with floating animation */}
-        <motion.p
-          animate={{ opacity: [0.5, 0.9, 0.5] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute left-8 top-20 z-20 font-mono text-xs text-ember-600"
-        >
-          SYS.ON // COORD.0192.44
-        </motion.p>
-        <div className="absolute bottom-8 right-8 z-20 flex items-center gap-2 opacity-80">
-          <span className="h-2 w-2 rounded-full bg-ember-600 animate-pulseLive" />
-          <span className="font-mono text-xs text-ember-600 tracking-wider">
-            REC // ACTIVE
-          </span>
-        </div>
-        <div className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-1 md:flex">
-          <span className="h-8 w-1 bg-ember-600/30 animate-pulse" />
-          <span className="h-12 w-1 bg-ember-600/60" />
-          <span className="h-4 w-1 bg-ember-600" />
-        </div>
-
-        <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col items-center justify-center px-4 pb-16 pt-20 text-center">
+        <div className="site-gutter relative z-20 mx-auto flex h-full max-w-7xl flex-col items-center justify-center pb-16 pt-20 text-center">
           {liveCount > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -5 }}
@@ -141,34 +121,12 @@ export default function Hero({
             </motion.div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.58 }}
-            className="mt-6 flex flex-wrap justify-center gap-3"
-          >
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link href="/matches" className="btn-ghost !py-2 !text-xs">
-                View Matches
-              </Link>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link href="/bracket" className="btn-ghost !py-2 !text-xs">
-                Bracket
-              </Link>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link href="/leaderboard" className="btn-ghost !py-2 !text-xs">
-                Leaderboard
-              </Link>
-            </motion.div>
-          </motion.div>
         </div>
       </section>
 
       {/* ============ DEPLOYMENT COUNTDOWN BAR ============ */}
-      <section className="relative border-b border-night-700 bg-night-page px-4 py-12">
-        <div className="mx-auto max-w-5xl">
+      <section className="relative border-b border-night-700 bg-night-page py-12">
+        <div className="site-gutter mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -195,7 +153,7 @@ export default function Hero({
       </section>
 
       {/* ============ QUICK STATS ============ */}
-      <section className="mx-auto max-w-5xl px-4 pt-12">
+      <section className="site-gutter mx-auto max-w-7xl pt-12">
         <div className="grid grid-cols-3 gap-4">
           {(
             [

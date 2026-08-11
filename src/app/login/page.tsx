@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-20">
+    <div className="site-gutter mx-auto max-w-md py-20">
       <div className="border-l-4 border-l-ember-400 pl-4">
         <h1 className="section-title">Admin Access</h1>
         <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">

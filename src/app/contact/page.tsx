@@ -37,7 +37,7 @@ function EmailIcon() {
 
 export default function ContactPage() {
   return (
-    <main className="mx-auto max-w-5xl px-4 py-12 md:py-16">
+    <main className="site-gutter mx-auto max-w-7xl py-12 md:py-16">
       <div className="border-l-4 border-l-ember-400 pl-4">
         <h1 className="section-title">Contact the organizers</h1>
         <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">

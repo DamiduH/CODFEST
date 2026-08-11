@@ -4,11 +4,11 @@ import Image from "next/image";
 export default function Footer() {
   return (
     <footer className="mt-16 border-t-2 border-t-white/20 bg-[#0A0F0C]">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-3">
+      <div className="site-gutter mx-auto grid max-w-7xl gap-10 py-12 md:grid-cols-3">
         <div>
           <Link href="/" aria-label="CODFEST home" className="inline-block">
             <Image
-              src="/logo.png"
+              src="/NavBarLogo.png"
               alt="CODFEST 2026"
               width={628}
               height={225}
@@ -16,8 +16,9 @@ export default function Footer() {
             />
           </Link>
           <p className="mt-4 max-w-xs font-mono text-[10px] leading-relaxed text-zinc-500 opacity-70">
-            SECURED DEPARTMENTAL CONNECTION ESTABLISHED. OPERATIONAL DATA ENCRYPTED.
-            UNAUTHORIZED ACCESS PROHIBITED.
+            Annual Call of Duty Esports Tournament Organized by Level 01
+            Undergraduates of the Industrial Management Science Students’
+            Association.
           </p>
         </div>
         <div>
@@ -25,9 +26,21 @@ export default function Footer() {
             System Links
           </h4>
           <ul className="mt-4 space-y-2.5 font-mono text-xs uppercase tracking-wide text-zinc-300">
-            <li><Link className="hover:text-ember-400" href="/rules">Terms of Engagement</Link></li>
-            <li><Link className="hover:text-ember-400" href="/bracket">Bracket</Link></li>
-            <li><Link className="hover:text-ember-400" href="/leaderboard">Leaderboard</Link></li>
+            <li>
+              <Link className="hover:text-ember-400" href="/rules">
+                Terms of Engagement
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:text-ember-400" href="/bracket">
+                Bracket
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:text-ember-400" href="/leaderboard">
+                Leaderboard
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
@@ -35,12 +48,18 @@ export default function Footer() {
             Comms
           </h4>
           <ul className="mt-4 space-y-2.5 font-mono text-xs uppercase tracking-wide text-zinc-300">
-            <li><Link className="hover:text-ember-400" href="/contact">Contact HQ</Link></li>
+            <li>
+              <Link className="hover:text-ember-400" href="/contact">
+                Contact HQ
+              </Link>
+            </li>
           </ul>
         </div>
       </div>
-      <div className="border-t border-night-700/30 bg-night-page/50 py-4 text-center font-mono text-[10px] text-zinc-500">
-        © {new Date().getFullYear()} CODFEST INTRA-DEPARTMENTAL ESPORTS CHAMPIONSHIP // OPERATIONAL DATA SECURED
+      <div className="border-t border-night-700/30 bg-night-page/50 py-4 text-center font-mono text-[10px] text-zinc-500 uppercase">
+        © {new Date().getFullYear()} CODFEST INTRA-DEPARTMENTAL ESPORTS
+        CHAMPIONSHIP. Organized by the Industrial Management Science Students’
+        Association.
       </div>
     </footer>
   );

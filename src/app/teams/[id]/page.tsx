@@ -25,7 +25,7 @@ export default function TeamProfilePage() {
   const history = matches.filter((m) => m.status === "finished");
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="site-gutter mx-auto max-w-7xl py-10">
       <div className="card flex flex-wrap items-center justify-between gap-6 p-6">
         <TeamMark name={team.team_name} logoUrl={team.logo_url} size={64} />
         <div className="flex gap-6 text-center">

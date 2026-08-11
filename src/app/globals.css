@@ -19,6 +19,10 @@ body {
 }
 
 @layer components {
+  .site-gutter {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
   .card {
     @apply border border-night-700 bg-night-900 transition-all duration-300 hover:border-ember-600/70 hover:shadow-glowSm hover:-translate-y-0.5;
   }

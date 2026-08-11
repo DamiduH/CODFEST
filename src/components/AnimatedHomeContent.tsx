@@ -12,7 +12,7 @@ export default function AnimatedHomeContent({
   announcements: Announcement[];
 }) {
   return (
-    <section className="mx-auto max-w-5xl px-4 py-16">
+    <section className="site-gutter mx-auto max-w-7xl py-16">
       {/* ============ MISSION BRIEFING HEADER ============ */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
