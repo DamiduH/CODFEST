@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +12,15 @@ interface MemberRow {
 }
 
 const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "", im_number: "" });
+
+function memberFromPlayer(p: any): MemberRow {
+  return {
+    member_name: p.player_name ?? "",
+    email: p.email ?? "",
+    phone: p.phone ?? "",
+    im_number: p.im_number ?? "",
+  };
+}
 
 /** Progress bar for the two-step flow. */
 function StepBar({ step }: { step: 1 | 2 }) {
@@ -38,8 +47,8 @@ export default function RegisterPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Step 1 — captain identity
-  const [acc, setAcc] = useState({ name: "", email: "" });
+  // Step 1 — captain identity (cleared after OTP, never persisted)
+  const [acc, setAcc] = useState({ name: "", email: "", im_number: "" });
 
   // Step 2 — team details
   const [teamName, setTeamName] = useState("");
@@ -48,6 +57,11 @@ export default function RegisterPage() {
   const [members, setMembers] = useState<MemberRow[]>([emptyMember()]);
   const [agreed, setAgreed] = useState(false);
 
+  // Edit mode — captain already has a team
+  const [editMode, setEditMode] = useState(false);
+  const [existingTeamId, setExistingTeamId] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
+
   // UI state
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -55,6 +69,25 @@ export default function RegisterPage() {
   const [done, setDone] = useState(false);
   const [pendingVerify, setPendingVerify] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
+
+  /* ─── When session loads, check if this captain already has a team ─── */
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/teams/my")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.team) {
+          setExistingTeamId(json.team.id);
+          setTeamName(json.team.team_name ?? "");
+          setCaptainPhone(json.team.phone ?? "");
+          if (json.players?.length) {
+            setMembers(json.players.map(memberFromPlayer));
+          }
+          setEditMode(true);
+        }
+      })
+      .catch(() => {});
+  }, [session]);
 
   /* ─── Step 1: send OTP ─── */
   async function startOtp(e: React.FormEvent) {
@@ -66,7 +99,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(acc),
+        body: JSON.stringify({ name: acc.name, email: acc.email }),
       });
       const text = await res.text();
       let json: { error?: string; needsVerification?: boolean; message?: string } = {};
@@ -113,7 +146,7 @@ export default function RegisterPage() {
         return;
       }
       // Clear leader identity so it is never persisted across refreshes
-      setAcc({ name: "", email: "" });
+      setAcc({ name: "", email: "", im_number: "" });
       setPendingVerify(null);
       router.refresh();
     } catch {
@@ -158,7 +191,6 @@ export default function RegisterPage() {
     const payload = {
       team_name: teamName,
       phone: captainPhone,
-      // use captain email as team contact email
       email: session?.user?.email ?? acc.email,
       agreed: true,
       players: members.map((m) => ({
@@ -182,12 +214,46 @@ export default function RegisterPage() {
     setDone(true);
   }
 
+  /* ─── Edit mode: save changes ─── */
+  async function saveTeamEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!existingTeamId) return;
+    setError(null);
+    if (members.some((m) => !m.member_name)) {
+      return setError("Every player needs a name");
+    }
+    setBusy(true);
+
+    const body = {
+      team_name: teamName,
+      phone: captainPhone,
+      players: members.map((m) => ({
+        player_name: m.member_name,
+        email: m.email,
+        phone: m.phone,
+        im_number: m.im_number,
+        game_id: "",
+        is_substitute: false,
+      })),
+    };
+
+    const res = await fetch(`/api/teams/${existingTeamId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return setError(json.error ?? "Could not save changes");
+    setEditSuccess(true);
+  }
+
   /* ─── Loading ─── */
   if (status === "loading") {
     return <p className="mt-20 text-center text-zinc-500">Loading…</p>;
   }
 
-  /* ─── Success screen ─── */
+  /* ─── Success screen (new registration) ─── */
   if (done) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">
@@ -273,7 +339,7 @@ export default function RegisterPage() {
         <StepBar step={1} />
         <p className="mt-4 text-center text-sm text-zinc-500">
           Only the <strong className="text-zinc-300">team leader</strong> registers. Enter your
-          name and email — we&apos;ll send a one-time code. No password required.
+          details — we&apos;ll send a one-time code. No password required.
         </p>
         <form onSubmit={startOtp} className="card mt-8 space-y-4 p-6">
           {error && (
@@ -303,6 +369,16 @@ export default function RegisterPage() {
               onChange={(e) => setAcc({ ...acc, email: e.target.value })}
             />
           </div>
+          <div>
+            <label className="label">Leader&apos;s IM Number</label>
+            <input
+              className="input"
+              placeholder="IM_NUMBER"
+              required
+              value={acc.im_number}
+              onChange={(e) => setAcc({ ...acc, im_number: e.target.value })}
+            />
+          </div>
           <button className="btn-primary w-full" disabled={busy}>
             {busy ? "Sending OTP…" : "Send OTP →"}
           </button>
@@ -311,25 +387,46 @@ export default function RegisterPage() {
     );
   }
 
-  /* ─── Step 2: team + members form ─── */
+  /* ─── Shared team form (register OR edit) ─── */
+  const isEdit = editMode && !!existingTeamId;
+  const formTitle = isEdit ? "Edit Your Team" : "Team Registration";
+  const formSubtitle = isEdit ? "// UPDATE SQUAD DETAILS" : "// SQUAD DETAILS";
+  const submitLabel = isEdit ? "Save Changes" : "Submit Team Registration";
+  const onSubmit = isEdit ? saveTeamEdit : registerTeam;
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="border-l-4 border-l-ember-400 pl-4">
-        <h1 className="section-title">Team Registration</h1>
+        <h1 className="section-title">{formTitle}</h1>
         <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
-          // SQUAD DETAILS
+          {formSubtitle}
         </p>
       </div>
-      <StepBar step={2} />
+      {!isEdit && <StepBar step={2} />}
 
-      <ul className="card mt-4 list-inside list-disc p-4 text-sm text-zinc-400">
-        <li>Only the team leader submits this form.</li>
-        <li>Team name must be unique (max 30 characters).</li>
-        <li>Add all team members — name, email, and mobile number required.</li>
-        <li>Real names only.</li>
-      </ul>
+      {/* Edit success banner */}
+      {editSuccess && (
+        <div className="mt-4 border border-green-500/40 bg-green-500/10 px-4 py-3 font-mono text-xs text-green-300">
+          ✓ Changes saved successfully.
+        </div>
+      )}
 
-      <form onSubmit={registerTeam} className="card mt-6 space-y-6 p-6">
+      {isEdit && (
+        <div className="mt-4 border border-ember-400/30 bg-ember-600/10 px-4 py-3 font-mono text-xs text-ember-300">
+          ✏ You&apos;re editing your existing team. Changes take effect immediately.
+        </div>
+      )}
+
+      {!isEdit && (
+        <ul className="card mt-4 list-inside list-disc p-4 text-sm text-zinc-400">
+          <li>Only the team leader submits this form.</li>
+          <li>Team name must be unique (max 30 characters).</li>
+          <li>Add all team members — name, email, mobile, and IM Number required.</li>
+          <li>Real names only.</li>
+        </ul>
+      )}
+
+      <form onSubmit={onSubmit} className="card mt-6 space-y-6 p-6">
         {error && (
           <p className="border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-xs text-red-300">
             {error}
@@ -359,15 +456,17 @@ export default function RegisterPage() {
               onChange={(e) => setCaptainPhone(e.target.value)}
             />
           </div>
-          <div className="sm:col-span-2">
-            <label className="label">Team logo (optional, max 4 MB)</label>
-            <input
-              className="input"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
-            />
-          </div>
+          {!isEdit && (
+            <div className="sm:col-span-2">
+              <label className="label">Team logo (optional, max 4 MB)</label>
+              <input
+                className="input"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
+              />
+            </div>
+          )}
         </div>
 
         {/* ── Members ── */}
@@ -462,21 +561,23 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* ── Agreement ── */}
-        <label className="flex items-start gap-3 text-sm text-zinc-400">
-          <input
-            type="checkbox"
-            className="mt-1"
-            checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
-          />
-          <span>
-            We have read and agree to the tournament rules and code of conduct.
-          </span>
-        </label>
+        {/* ── Agreement (new registration only) ── */}
+        {!isEdit && (
+          <label className="flex items-start gap-3 text-sm text-zinc-400">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+            />
+            <span>
+              We have read and agree to the tournament rules and code of conduct.
+            </span>
+          </label>
+        )}
 
         <button className="btn-primary w-full" disabled={busy}>
-          {busy ? "Submitting…" : "Submit Team Registration"}
+          {busy ? (isEdit ? "Saving…" : "Submitting…") : submitLabel}
         </button>
       </form>
     </div>
