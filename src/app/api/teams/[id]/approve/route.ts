@@ -33,12 +33,13 @@ export async function PATCH(_req: Request, { params }: { params: { id: string } 
   }
 
   // Dispatch Welcome email to players
-  db()
-    .from("players")
-    .select("player_name, email")
-    .eq("team_id", team.id)
-    .then(({ data: players }) => {
-      if (!players) return;
+  try {
+    const { data: players } = await db()
+      .from("players")
+      .select("player_name, email")
+      .eq("team_id", team.id);
+
+    if (players) {
       for (const p of players) {
         if (p.email && p.email.toLowerCase().trim() !== team.email?.toLowerCase().trim()) {
           sendWelcomeEmail({
@@ -49,8 +50,10 @@ export async function PATCH(_req: Request, { params }: { params: { id: string } 
           }).catch((err) => console.error(`[sendWelcomeEmail approve player ${p.email}] error:`, err));
         }
       }
-    })
-    .catch((err) => console.error("[fetch players for email] error:", err));
+    }
+  } catch (err) {
+    console.error("[fetch players for email] error:", err);
+  }
 
   return NextResponse.json({ team });
 }
