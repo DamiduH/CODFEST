@@ -737,6 +737,7 @@ export default function RegisterPage() {
                     <input
                       className="input"
                       type="email"
+                      required
                       placeholder="member@domain"
                       value={m.email}
                       onChange={(e) =>
@@ -748,6 +749,9 @@ export default function RegisterPage() {
                     <label className="label text-[11px]">Mobile number</label>
                     <input
                       className="input"
+                      type="tel"
+                      pattern="^[\d\s\+\-]{10,15}$"
+                      title="Please enter a valid phone number (10 to 15 digits)"
                       placeholder="+94 XXX XXX XXXX"
                       required
                       value={m.phone}
