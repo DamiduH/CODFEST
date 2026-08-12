@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 /** Public — approved teams only. */
 export async function GET() {
@@ -11,6 +12,7 @@ export async function GET() {
     .eq("status", "approved")
     .order("team_name");
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ teams: data });
+  const headers = { "Cache-Control": "no-store, max-age=0" };
+  if (error) return NextResponse.json({ error: error.message }, { status: 500, headers });
+  return NextResponse.json({ teams: data }, { headers });
 }
