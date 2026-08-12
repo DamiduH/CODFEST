@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { getPusherClient } from '@/lib/pusher';
+import { useSession } from 'next-auth/react';
 
 interface KillEvent {
   attacker: string;
@@ -16,6 +17,8 @@ interface KillEvent {
 
 export default function ScoreboardPage() {
   const [killFeed, setKillFeed] = useState<KillEvent[]>([]);
+  const { data: session, status } = useSession();
+  const isAdmin = session?.user?.role === 'admin';
 
   useEffect(() => {
     // Pusher client is only created here — safely inside useEffect (browser only).
@@ -30,6 +33,38 @@ export default function ScoreboardPage() {
       pusher.unsubscribe('cod4-server');
     };
   }, []);
+
+  if (status === 'loading') {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#0a0c10]">
+        <span className="font-mono text-xs text-gray-600 animate-pulse">Loading…</span>
+      </main>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#0a0c10] text-white px-4 text-center">
+        {/* Scan-line overlay */}
+        <div
+          className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]"
+          style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff, #fff 1px, transparent 1px, transparent 4px)' }}
+        />
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="text-5xl opacity-30">🛡️</div>
+          <h1 className="text-3xl font-black tracking-tight">
+            <span className="text-red-500">ADMIN</span> ONLY
+          </h1>
+          <div className="rounded-full border border-red-900/50 bg-red-900/20 px-5 py-2 font-mono text-xs font-bold uppercase tracking-widest text-red-400">
+            Access Denied
+          </div>
+          <p className="max-w-xs font-mono text-sm text-gray-600">
+            The killfeed page is restricted to tournament administrators.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="site-gutter min-h-screen bg-gray-950 py-10 text-white">

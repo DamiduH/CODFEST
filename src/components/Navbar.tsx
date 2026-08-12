@@ -40,6 +40,7 @@ export default function Navbar() {
   const roleLinks = [
     ...(role === "admin" ? [
       { href: "/livescore", label: "Live Score", badge: "LIVE" },
+      { href: "/scoreboard", label: "Killfeed", badge: "LIVE" },
       { href: "/admin", label: "Admin" }
     ] : []),
   ];
