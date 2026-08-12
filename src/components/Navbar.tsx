@@ -23,7 +23,7 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [liveScoreVisible, setLiveScoreVisible] = useState(true);
+  const [liveScoreVisible, setLiveScoreVisible] = useState(false);
 
   useEffect(() => {
     const updateNavbar = () => setScrolled(window.scrollY > 12);
@@ -32,12 +32,16 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", updateNavbar);
   }, []);
 
-  // Fetch site settings to conditionally hide the Live Score nav link.
+  // Fetch site settings to conditionally show/hide the Live Score nav link.
+  // Defaults to false (hidden) until the API confirms it's enabled.
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
-      .then((j) => setLiveScoreVisible(j.settings?.live_score_visible ?? true))
-      .catch(() => {}); // fail open — keep link visible
+      .then((j) => {
+        const val = j.settings?.live_score_visible;
+        setLiveScoreVisible(val === false ? false : true);
+      })
+      .catch(() => setLiveScoreVisible(false)); // fail closed
   }, []);
 
   const role = session?.user?.role;

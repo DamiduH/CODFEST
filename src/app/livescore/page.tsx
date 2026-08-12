@@ -99,8 +99,12 @@ export default function LiveScorePage() {
   useEffect(() => {
     fetch('/api/settings')
       .then((r) => r.json())
-      .then((j) => setLiveScoreVisible(j.settings?.live_score_visible ?? true))
-      .catch(() => setLiveScoreVisible(true)); // fail open
+      .then((j) => {
+        // Explicit false = hidden. Anything else (true or missing key) = visible.
+        const val = j.settings?.live_score_visible;
+        setLiveScoreVisible(val === false ? false : true);
+      })
+      .catch(() => setLiveScoreVisible(false)); // fail closed — hide on error
   }, []);
 
   useEffect(() => {

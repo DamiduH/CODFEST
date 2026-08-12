@@ -3,7 +3,10 @@ import { db } from "@/lib/supabase";
 
 /** GET /api/settings
  *  Returns global site settings. Public endpoint — no auth required.
- *  Falls back to safe defaults if the site_settings table doesn't exist yet.
+ *
+ *  FAIL-CLOSED: if the table doesn't exist or the DB errors,
+ *  we return live_score_visible: FALSE so the page stays hidden.
+ *  This ensures the admin's OFF setting is never accidentally overridden.
  */
 export async function GET() {
   const { data, error } = await db()
@@ -12,11 +15,11 @@ export async function GET() {
 
   if (error) {
     // Table probably doesn't exist yet (migration not run).
-    // Log it and return safe defaults so the UI doesn't break.
+    // Fail CLOSED: hide the live score rather than accidentally showing it.
     console.error("[settings] site_settings table error:", error.message);
     return NextResponse.json({
-      settings: { live_score_visible: true },
-      _warning: "site_settings table missing — run the migration SQL",
+      settings: { live_score_visible: false },
+      _warning: "site_settings table missing — run the migration SQL in Supabase",
     });
   }
 
@@ -29,7 +32,8 @@ export async function GET() {
     else settings[row.key] = row.value;
   }
 
-  // If table exists but has no row yet, seed the default.
+  // If the table exists but has no row yet, default to TRUE (visible).
+  // Once the admin explicitly sets it to false, that value is persisted.
   if (!("live_score_visible" in settings)) {
     settings.live_score_visible = true;
   }

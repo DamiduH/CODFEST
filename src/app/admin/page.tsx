@@ -245,7 +245,12 @@ function LiveScorePanel() {
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
-      .then((j) => setLiveScoreVisible(j.settings?.live_score_visible ?? true));
+      .then((j) => {
+        const val = j.settings?.live_score_visible;
+        // Explicit false = hidden. Anything else = visible.
+        setLiveScoreVisible(val === false ? false : true);
+      })
+      .catch(() => setLiveScoreVisible(false));
   }, []);
 
   async function toggleVisibility() {
