@@ -3,34 +3,155 @@
 import { useState } from "react";
 
 const RULE_SECTIONS = [
-  "Match Format",
+  "Match Format & Server Settings",
   "Weapons & Classes",
-  "Maps & Selection",
-  "Technical Rules",
+  "Map Pool & Tournament Format",
+  "Technical & Disconnect Rules",
   "Fair Play & Penalties",
 ] as const;
 
 type RuleSection = (typeof RULE_SECTIONS)[number];
+type Division = "boys" | "girls";
 
-const classes = [
-  { name: "Assault", allowed: "AK-47, M4A1, G36c", limit: "Unlimited" },
-  { name: "SMG", allowed: "AK-74u, MP5", limit: "Max 2" },
-  { name: "Sniper", allowed: "M40A3, R700", limit: "Max 1" },
-  { name: "Shotgun", allowed: "W1200, M1014", limit: "Max 1" },
+const weaponClasses = [
+  { name: "Assault", weapons: "AK-47, M4A1, G36c", limit: "Unlimited" },
+  { name: "Spec-Ops / SMG", weapons: "AK-74u, MP5", limit: "Max 2" },
+  { name: "Sniper", weapons: "M40A3, R700", limit: "Max 1" },
+  { name: "Shotgun", weapons: "W1200, M1014", limit: "Max 1" },
 ];
 
-const matchRules = [
-  ["First to", "7 rounds wins"],
-  ["Half-time", "Side swap after 6 rounds"],
-  ["Round Timer", "1:45"],
-  ["Bomb Fuse", "45s"],
-  ["Plant", "5s"],
-  ["Defuse", "7s"],
-  ["Friendly Fire", "ON"],
-  ["Killcam", "OFF"],
-  ["3rd Person Spectating", "OFF"],
-  ["Perks & Killstreak Rewards", "OFF"],
+const bannedItems = [
+  ["Weapons", "All LMGs (RPD, SAW, M60), P90, Skorpion, Barrett .50 Cal, Dragunov"],
+  ["Attachments", 'Grenade Launchers ("Noob Tubes"), Red Dot, ACOG, Silencers'],
+  ["Equipment", "Claymores, C4, RPGs, Stun Grenades"],
 ];
+
+const mapPool = ["Crash", "Backlot", "Strike", "District", "Crossfire"];
+
+const matchSettings: Record<Division, { chips: string[]; rows: string[][]; note?: string }> = {
+  boys: {
+    chips: ["S&D", "5v5", "Promod LIVE", "LAN"],
+    rows: [
+      ["Mode", "Search & Destroy (S&D)"],
+      ["Platform / Mod", "CoD4 Promod LIVE / LAN"],
+      ["Team Size", "5v5"],
+      ["Friendly Fire", "Enabled"],
+      ["Killcam", "Disabled"],
+      ["3rd Person Spectating", "Disabled"],
+      ["Round Timer", "1:45"],
+      ["Bomb Fuse", "45s"],
+      ["Plant Time", "5s"],
+      ["Defuse Time", "7s"],
+      ["Perks & Killstreak Rewards", "Disabled"],
+    ],
+  },
+  girls: {
+    chips: ["TDM", "5v5", "15 Minutes", "100 Kills"],
+    rows: [
+      ["Mode", "Team Deathmatch (TDM)"],
+      ["Platform / Mod", "CoD4 Promod LIVE / LAN"],
+      ["Team Size", "5v5"],
+      ["Friendly Fire", "Enabled"],
+      ["Killcam", "Disabled"],
+      ["3rd Person Spectating", "Disabled"],
+      ["Match Length", "15 minutes"],
+      ["Score Limit", "100 kills"],
+      ["Win Condition", "Highest kill count at time or first to 100 kills"],
+      ["Tie-Breaker", "Sudden death — first kill wins, or event overtime ruling"],
+    ],
+    note: "The match ends early if a team reaches 100 kills before time expires.",
+  },
+};
+
+const tournamentStages: Record<Division, { title: string; rules: string[]; emphasis?: string }[]> = {
+  boys: [
+    {
+      title: "Initial Rounds & Group Stage — Best of 1",
+      rules: [
+        "One map is played.",
+        "First team to win 7 rounds wins the match.",
+        "Half-time side swap occurs after 6 rounds.",
+        "A coin toss takes place before the match.",
+        "Coin Toss Winner: Chooses the map.",
+        "Coin Toss Loser: Chooses the starting side (Attack / Defend).",
+      ],
+    },
+    {
+      title: "Semi-Finals — Best of 3 Maps",
+      rules: [
+        "A coin toss takes place before the map veto.",
+        "Coin Toss Winner: Bans 1 map.",
+        "Coin Toss Loser: Bans 1 map.",
+        "The remaining 3 maps are played.",
+        "Coin Toss Winner: Chooses the starting side for Map 1.",
+        "The team that wins 2 maps wins the Semi-Final.",
+      ],
+    },
+    {
+      title: "Grand Finals — Best of 3 Maps",
+      rules: [
+        "Each map is played until one team reaches 13 round wins.",
+        "The team that reaches 13 rounds first wins that map.",
+        "The first team to win 2 maps wins the Grand Final.",
+        "Map 3 is played only if the series is tied 1–1 after the first two maps.",
+      ],
+    },
+  ],
+  girls: [
+    {
+      title: "Initial Rounds & Group Stage — Best of 1",
+      rules: [
+        "A coin toss takes place before the match.",
+        "Coin Toss Winner: Chooses the map.",
+        "Coin Toss Loser: Chooses the starting spawn side.",
+      ],
+    },
+    {
+      title: "Semi-Finals — Best of 3 Maps",
+      rules: [
+        "A coin toss takes place before the map veto.",
+        "Coin Toss Winner: Bans 1 map.",
+        "Coin Toss Loser: Bans 1 map.",
+        "The remaining 3 maps are played.",
+        "Coin Toss Winner: Chooses the starting spawn side for Map 1.",
+      ],
+    },
+    {
+      title: "Grand Final — 3 Maps",
+      emphasis: "All 3 maps are played in full",
+      rules: [
+        "All 3 maps are played in full.",
+        "Each map lasts 15 minutes unless the 100-kill score limit is reached first.",
+        "The winner is determined by the highest combined kill total across all 3 maps.",
+      ],
+    },
+  ],
+};
+
+const technicalRules: Record<Division, string[][]> = {
+  boys: [
+    ["Disconnect Before First Blood", "Restart the round if the disconnect occurs within the first 30 seconds and no kills have occurred."],
+    ["Disconnect After First Blood", "Complete the current round. The disconnected player may rejoin the following round."],
+    ["Macros & Scripts", "Rapid-fire macros, scripts and scroll-wheel fire binds are strictly prohibited."],
+  ],
+  girls: [
+    ["Disconnect Within First 60 Seconds", "The match may be restarted if there is no significant score gap."],
+    ["Disconnect After 60 Seconds", "The match continues and the disconnected player may rejoin at any time."],
+    ["Macros & Scripts", "Rapid-fire macros, scripts and scroll-wheel fire binds are strictly prohibited."],
+  ],
+};
+
+const fairPlay: Record<Division, { prohibited: string[]; note?: string; penalties: string[] }> = {
+  boys: {
+    prohibited: ["Elevator glitches", "Sky-walking", "Going out of bounds", "Defusing the bomb through solid walls or boxes", "Ghosting"],
+    note: "Ghosting Rule: Eliminated players may not call out enemy positions to teammates who are still alive.",
+    penalties: ["1 Round Forfeit", "Instant Match Disqualification"],
+  },
+  girls: {
+    prohibited: ["Elevator glitches", "Sky-walking", "Going out of bounds", "Spawn-camping / spawn-trapping abuse", "Ghosting", "Coordinating with spectators during a match"],
+    penalties: ["Warning + 5-kill score deduction", "Instant Match Disqualification"],
+  },
+};
 
 function RuleList({ items }: { items: string[] }) {
   return (
@@ -46,158 +167,143 @@ function RuleList({ items }: { items: string[] }) {
 }
 
 export default function RulesPage() {
-  const [openSection, setOpenSection] = useState<RuleSection | null>("Match Format");
+  const [division, setDivision] = useState<Division>("boys");
+  const [openSection, setOpenSection] = useState<RuleSection | null>(RULE_SECTIONS[0]);
 
-  const toggleSection = (section: RuleSection) => {
-    setOpenSection((current) => (current === section ? null : section));
+  const selectDivision = (nextDivision: Division) => {
+    setDivision(nextDivision);
+    setOpenSection(RULE_SECTIONS[0]);
   };
 
   return (
     <div className="site-gutter mx-auto max-w-7xl py-10">
       <div>
         <h1 className="section-title">Rules and Regulations</h1>
-        <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-zinc-500">
-          // Tournament Rules
-        </p>
+        <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-zinc-500">// Final Tournament Rules</p>
       </div>
 
-      <div className="mt-6 space-y-2">
+      <div className="mt-6 grid grid-cols-2 border border-night-700 bg-night-900 p-1" role="tablist" aria-label="Tournament division">
+        {([ ["boys", "Boys’ S&D"], ["girls", "Girls’ TDM"] ] as const).map(([value, label]) => {
+          const selected = division === value;
+          return (
+            <button
+              key={value}
+              id={`${value}-division-tab`}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls="division-rules"
+              tabIndex={selected ? 0 : -1}
+              onClick={() => selectDivision(value)}
+              className={`min-h-11 px-3 py-2 font-display text-base font-bold uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ember-600 sm:text-lg ${selected ? "bg-ember-600 text-night-page" : "text-zinc-400 hover:bg-ember-600/5 hover:text-white"}`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div id="division-rules" role="tabpanel" aria-labelledby={`${division}-division-tab`} className="mt-2 space-y-2">
         {RULE_SECTIONS.map((section, index) => {
           const isOpen = openSection === section;
-          const panelId = `rules-panel-${index}`;
-          const buttonId = `rules-button-${index}`;
+          const panelId = `${division}-rules-panel-${index}`;
+          const buttonId = `${division}-rules-button-${index}`;
 
           return (
-            <section key={section} className="card !translate-y-0 overflow-hidden hover:!shadow-none">
+            <section key={`${division}-${section}`} className="card !translate-y-0 overflow-hidden hover:!shadow-none">
               <h2>
                 <button
                   id={buttonId}
                   type="button"
                   aria-expanded={isOpen}
                   aria-controls={panelId}
-                  onClick={() => toggleSection(section)}
+                  onClick={() => setOpenSection((current) => current === section ? null : section)}
                   className="flex min-h-12 w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-ember-600/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ember-600 sm:px-5"
                 >
                   <span className="flex items-center gap-3">
                     <span className="font-mono text-[10px] text-ember-600/60">0{index + 1}</span>
-                    <span className="font-display text-lg font-bold uppercase tracking-[0.06em] text-white">
-                      {section}
-                    </span>
+                    <span className="font-display text-base font-bold uppercase tracking-[0.06em] text-white sm:text-lg">{section}</span>
                   </span>
-                  <span
-                    aria-hidden="true"
-                    className={`relative h-4 w-4 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-45" : ""}`}
-                  >
+                  <span aria-hidden="true" className={`relative h-4 w-4 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-45" : ""}`}>
                     <span className="absolute left-0 top-[7px] h-px w-4 bg-ember-600" />
                     <span className="absolute left-[7px] top-0 h-4 w-px bg-ember-600" />
                   </span>
                 </button>
               </h2>
 
-              <div
-                id={panelId}
-                role="region"
-                aria-labelledby={buttonId}
-                aria-hidden={!isOpen}
-                className={`grid transition-[grid-template-rows] duration-300 ease-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-              >
+              <div id={panelId} role="region" aria-labelledby={buttonId} aria-hidden={!isOpen} className={`grid transition-[grid-template-rows] duration-300 ease-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
                 <div className="overflow-hidden">
                   <div className="border-t border-night-700 px-4 py-5 sm:px-5">
-                    {section === "Match Format" && (
+                    {section === RULE_SECTIONS[0] && (
                       <div className="space-y-4">
                         <div className="flex flex-wrap gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em]">
-                          {["5v5", "Promod LIVE", "LAN"].map((item) => (
-                            <span key={item} className="border border-ember-600/50 bg-ember-600/10 px-2.5 py-1 text-ember-400">
-                              {item}
-                            </span>
-                          ))}
+                          {matchSettings[division].chips.map((item) => <span key={item} className="border border-ember-600/50 bg-ember-600/10 px-2.5 py-1 text-ember-400">{item}</span>)}
                         </div>
                         <dl className="grid gap-px overflow-hidden border border-night-700 bg-night-700 sm:grid-cols-2">
-                          {matchRules.map(([label, value]) => (
-                            <div key={label} className="flex items-center justify-between gap-3 bg-night-900 px-3 py-2.5">
+                          {matchSettings[division].rows.map(([label, value]) => (
+                            <div key={label} className="flex flex-col gap-1 bg-night-900 px-3 py-2.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                               <dt className="text-sm text-zinc-400">{label}</dt>
-                              <dd className="font-mono text-xs font-bold uppercase text-ember-400">{value}</dd>
+                              <dd className="font-mono text-xs font-bold uppercase text-ember-400 min-[420px]:text-right">{value}</dd>
                             </div>
                           ))}
                         </dl>
+                        {matchSettings[division].note && <p className="border-l-2 border-ember-600 px-3 py-2 text-sm text-zinc-300">{matchSettings[division].note}</p>}
                       </div>
                     )}
 
-                    {section === "Weapons & Classes" && (
-                      <div className="space-y-5">
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          {classes.map((weaponClass) => (
-                            <div key={weaponClass.name} className="border border-night-700 bg-night-page/40 p-3">
-                              <div className="flex items-center justify-between gap-3">
-                                <h3 className="font-display text-lg uppercase tracking-[0.05em] text-white">{weaponClass.name}</h3>
-                                <span className="font-mono text-[10px] font-bold uppercase text-ember-400">{weaponClass.limit}</span>
-                              </div>
-                              <p className="mt-1 text-sm text-zinc-400">
-                                <span className="font-mono text-[10px] uppercase text-zinc-500">Allowed: </span>
-                                {weaponClass.allowed}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="border-l-2 border-ember-600 bg-ember-600/5 p-4">
-                          <h3 className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-ember-400">Banned</h3>
-                          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
-                            <div><dt className="font-bold text-zinc-200">Weapons</dt><dd className="mt-1 text-zinc-400">All LMGs, P90, Skorpion, Barrett .50 Cal, Dragunov</dd></div>
-                            <div><dt className="font-bold text-zinc-200">Attachments</dt><dd className="mt-1 text-zinc-400">Grenade Launchers, Red Dot, ACOG, Silencers</dd></div>
-                            <div><dt className="font-bold text-zinc-200">Equipment</dt><dd className="mt-1 text-zinc-400">Claymores, C4, RPGs, Stun Grenades</dd></div>
-                          </dl>
-                          <p className="mt-4 border-t border-ember-600/20 pt-3 text-sm text-zinc-300">
-                            <strong className="text-ember-400">Additional restriction:</strong> Each player may carry only 1 Frag + 1 Flash/Smoke.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {section === "Maps & Selection" && (
+                    {section === RULE_SECTIONS[1] && (
                       <div className="space-y-5">
                         <div>
-                          <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Map Pool</h3>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {["Crash", "Backlot", "Strike", "District", "Crossfire"].map((map) => (
-                              <span key={map} className="border border-night-700 bg-night-page/40 px-3 py-1.5 font-mono text-xs uppercase text-zinc-300">{map}</span>
+                          <h3 className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Class Limits</h3>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {weaponClasses.map((item) => (
+                              <div key={item.name} className="border border-night-700 bg-night-page/40 p-3">
+                                <div className="flex items-center justify-between gap-3"><h4 className="font-display text-lg uppercase tracking-[0.05em] text-white">{item.name}</h4><span className="font-mono text-[10px] font-bold uppercase text-ember-400">{item.limit}</span></div>
+                                <p className="mt-1 text-sm text-zinc-400"><span className="font-mono text-[10px] uppercase text-zinc-500">Weapons: </span>{item.weapons}</p>
+                              </div>
                             ))}
                           </div>
                         </div>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <p className="border-l-2 border-ember-600 px-3 py-2 text-sm text-zinc-400"><strong className="block text-zinc-200">Coin Toss Winner</strong>Chooses the map</p>
-                          <p className="border-l-2 border-ember-600 px-3 py-2 text-sm text-zinc-400"><strong className="block text-zinc-200">Coin Toss Loser</strong>Chooses the starting side (Attack / Defend)</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {section === "Technical Rules" && (
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        {[
-                          ["Before First Blood", "Restart the round if a disconnect occurs within 30 seconds and no kills have occurred."],
-                          ["After First Blood", "Complete the current round. The disconnected player may rejoin the following round."],
-                          ["Macros & Scripts", "Rapid-fire macros, scripts, and scroll-wheel fire binds are strictly prohibited."],
-                        ].map(([title, detail]) => (
-                          <div key={title} className="border-l-2 border-ember-600/60 px-3 py-1">
-                            <h3 className="font-bold text-zinc-200">{title}</h3>
-                            <p className="mt-1 text-sm leading-relaxed text-zinc-400">{detail}</p>
+                        <div className="border-l-2 border-ember-600 bg-ember-600/5 p-4">
+                          <h3 className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-ember-400">Strictly Banned</h3>
+                          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
+                            {bannedItems.map(([label, value]) => <div key={label}><dt className="font-bold text-zinc-200">{label}</dt><dd className="mt-1 text-zinc-400">{value}</dd></div>)}
+                          </dl>
+                          <div className="mt-4 grid gap-2 border-t border-ember-600/20 pt-3 text-sm text-zinc-300 sm:grid-cols-2">
+                            <p><strong className="text-ember-400">Equipment Limit:</strong> 1 Frag + 1 Flash/Smoke per player</p>
+                            {division === "girls" && <p><strong className="text-ember-400">Perks & Killstreak Rewards:</strong> Disabled</p>}
                           </div>
-                        ))}
+                        </div>
                       </div>
                     )}
 
-                    {section === "Fair Play & Penalties" && (
+                    {section === RULE_SECTIONS[2] && (
                       <div className="space-y-5">
-                        <div>
-                          <h3 className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Prohibited</h3>
-                          <RuleList items={["Elevator glitches", "Sky-walking", "Out-of-bounds exploits", "Defusing through solid walls or boxes", "Ghosting"]} />
+                        <div><h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Map Pool</h3><div className="mt-2 flex flex-wrap gap-2">{mapPool.map((map) => <span key={map} className="border border-night-700 bg-night-page/40 px-3 py-1.5 font-mono text-xs uppercase text-zinc-300">{map}</span>)}</div></div>
+                        <div className="grid gap-3 lg:grid-cols-3">
+                          {tournamentStages[division].map((stage) => (
+                            <article key={stage.title} className={`border p-4 ${stage.emphasis ? "border-ember-600 bg-ember-600/5" : "border-night-700 bg-night-page/40"}`}>
+                              <h3 className="font-display text-lg font-bold uppercase tracking-[0.05em] text-white">{stage.title}</h3>
+                              {stage.emphasis && <p className="mt-2 border-y border-ember-600/30 py-2 font-mono text-xs font-bold uppercase tracking-[0.12em] text-ember-400">{stage.emphasis}</p>}
+                              <div className="mt-3"><RuleList items={stage.rules} /></div>
+                            </article>
+                          ))}
                         </div>
-                        <p className="border-l-2 border-ember-600 px-3 py-2 text-sm leading-relaxed text-zinc-400">
-                          <strong className="text-zinc-200">Ghosting rule:</strong> Eliminated players may not call out enemy positions to teammates who are still alive.
-                        </p>
+                      </div>
+                    )}
+
+                    {section === RULE_SECTIONS[3] && (
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {technicalRules[division].map(([title, detail]) => <div key={title} className="border-l-2 border-ember-600/60 px-3 py-1"><h3 className="font-bold text-zinc-200">{title}</h3><p className="mt-1 text-sm leading-relaxed text-zinc-400">{detail}</p></div>)}
+                      </div>
+                    )}
+
+                    {section === RULE_SECTIONS[4] && (
+                      <div className="space-y-5">
+                        <div><h3 className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Prohibited</h3><RuleList items={fairPlay[division].prohibited} /></div>
+                        {fairPlay[division].note && <p className="border-l-2 border-ember-600 px-3 py-2 text-sm leading-relaxed text-zinc-400"><strong className="text-zinc-200">Ghosting Rule:</strong> {fairPlay[division].note.replace("Ghosting Rule: ", "")}</p>}
                         <div className="grid gap-2 sm:grid-cols-2">
-                          <div className="border border-ember-600/40 bg-ember-600/5 p-3"><span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ember-400">1st Offense</span><strong className="mt-1 block font-display text-lg uppercase text-white">Round Forfeit</strong></div>
-                          <div className="border border-ember-600 bg-ember-600/10 p-3"><span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ember-400">2nd Offense</span><strong className="mt-1 block font-display text-lg uppercase text-white">Match Disqualification</strong></div>
+                          {fairPlay[division].penalties.map((penalty, penaltyIndex) => <div key={penalty} className={`border border-ember-600 p-3 ${penaltyIndex ? "bg-ember-600/10" : "bg-ember-600/5"}`}><span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ember-400">{penaltyIndex + 1}{penaltyIndex === 0 ? "st" : "nd"} Offense</span><strong className="mt-1 block font-display text-lg uppercase text-white">{penalty}</strong></div>)}
                         </div>
                       </div>
                     )}
