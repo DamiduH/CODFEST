@@ -234,9 +234,38 @@ function FixturesPanel() {
  */
 function LiveScorePanel() {
   const [liveMatches, setLiveMatches] = useState<Match[]>([]);
-  const [scores, setScores] = useState<Record<string, { s1: string; s2: string }>>({});
+  const [scores, setScores] = useState<Record<string, { s1: string; s2: string }>>({})
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [feedback, setFeedback] = useState<Record<string, string>>({});
+  const [liveScoreVisible, setLiveScoreVisible] = useState<boolean | null>(null);
+  const [toggleBusy, setToggleBusy] = useState(false);
+  const [toggleMsg, setToggleMsg] = useState<string | null>(null);
+
+  // Fetch the current visibility setting on mount.
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((j) => setLiveScoreVisible(j.settings?.live_score_visible ?? true));
+  }, []);
+
+  async function toggleVisibility() {
+    if (liveScoreVisible === null) return;
+    const next = !liveScoreVisible;
+    setToggleBusy(true);
+    const res = await fetch("/api/admin/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "live_score_visible", value: next }),
+    });
+    setToggleBusy(false);
+    if (res.ok) {
+      setLiveScoreVisible(next);
+      setToggleMsg(next ? "✓ Live Score page is now VISIBLE to everyone." : "✓ Live Score page is now HIDDEN from the public.");
+    } else {
+      setToggleMsg("Failed to update setting.");
+    }
+    setTimeout(() => setToggleMsg(null), 4000);
+  }
 
   const load = useCallback(() => {
     fetch("/api/matches?status=live")
@@ -289,6 +318,45 @@ function LiveScorePanel() {
 
   return (
     <div>
+      {/* ── Live Score Visibility Toggle ── */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded border border-night-700 bg-night-850 px-5 py-4">
+        <div>
+          <p className="font-display text-sm font-bold uppercase tracking-wide text-white">
+            Public Live Score Visibility
+          </p>
+          <p className="mt-0.5 font-mono text-xs text-zinc-500">
+            {liveScoreVisible
+              ? "The /livescore page is currently VISIBLE to all users."
+              : "The /livescore page is currently HIDDEN — visitors see a maintenance message."}
+          </p>
+          {toggleMsg && (
+            <p className={`mt-1 font-mono text-xs ${
+              toggleMsg.startsWith("✓") ? "text-green-400" : "text-red-400"
+            }`}>{toggleMsg}</p>
+          )}
+        </div>
+        <button
+          id="live-score-visibility-toggle"
+          onClick={toggleVisibility}
+          disabled={toggleBusy || liveScoreVisible === null}
+          className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
+            liveScoreVisible
+              ? "border-green-500 bg-green-500/20"
+              : "border-zinc-600 bg-zinc-700/30"
+          }`}
+          aria-label="Toggle live score visibility"
+          title={liveScoreVisible ? "Click to HIDE live score" : "Click to SHOW live score"}
+        >
+          <span
+            className={`inline-block h-5 w-5 transform rounded-full shadow-lg transition-transform duration-200 ${
+              liveScoreVisible
+                ? "translate-x-7 bg-green-400"
+                : "translate-x-0.5 bg-zinc-400"
+            }`}
+          />
+        </button>
+      </div>
+
       <div className="mb-4 border border-ember-400/30 bg-ember-600/10 px-4 py-3 font-mono text-xs text-ember-300">
         🖥️ SERVER LAPTOP — type the current in-game score and hit <strong>Push</strong>.
         All connected browsers update instantly via Socket.IO.

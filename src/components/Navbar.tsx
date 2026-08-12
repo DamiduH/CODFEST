@@ -12,7 +12,7 @@ const LINKS = [
   { href: "/teams", label: "Teams" },
   { href: "/matches", label: "Matches" },
   { href: "/bracket", label: "Bracket" },
-  { href: "/livescore", label: "Live Score", badge: "LIVE" },
+  { href: "/livescore", label: "Live Score", badge: "LIVE", settingKey: "live_score_visible" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/rules", label: "Rules" },
   { href: "/contact", label: "Contact" },
@@ -23,6 +23,7 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [liveScoreVisible, setLiveScoreVisible] = useState(true);
 
   useEffect(() => {
     const updateNavbar = () => setScrolled(window.scrollY > 12);
@@ -30,7 +31,22 @@ export default function Navbar() {
     window.addEventListener("scroll", updateNavbar, { passive: true });
     return () => window.removeEventListener("scroll", updateNavbar);
   }, []);
+
+  // Fetch site settings to conditionally hide the Live Score nav link.
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((j) => setLiveScoreVisible(j.settings?.live_score_visible ?? true))
+      .catch(() => {}); // fail open — keep link visible
+  }, []);
+
   const role = session?.user?.role;
+
+  // Filter out links that are gated by a setting flag.
+  const visibleLinks = LINKS.filter((l) => {
+    if ((l as any).settingKey === "live_score_visible") return liveScoreVisible;
+    return true;
+  });
 
   const roleLinks = [
     ...(role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
@@ -57,7 +73,7 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
-          {LINKS.map((l) => {
+          {visibleLinks.map((l) => {
             const active = pathname === l.href;
             return (
               <Link
@@ -160,7 +176,7 @@ export default function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="site-gutter overflow-hidden border-t border-night-700 bg-night-900 py-3 lg:hidden"
           >
-            {[...LINKS, ...roleLinks].map((l) => (
+            {[...visibleLinks, ...roleLinks].map((l) => (
               <Link
                 key={l.href}
                 href={l.href}

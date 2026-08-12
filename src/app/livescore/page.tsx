@@ -93,6 +93,16 @@ export default function LiveScorePage() {
   const [connected,   setConnected]   = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
+  // ── Visibility gate ───────────────────────────────────────────────────────
+  const [liveScoreVisible, setLiveScoreVisible] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((j) => setLiveScoreVisible(j.settings?.live_score_visible ?? true))
+      .catch(() => setLiveScoreVisible(true)); // fail open
+  }, []);
+
   useEffect(() => {
     const pusher  = getPusherClient();
     const channel = pusher.subscribe('cod4-server');
@@ -145,6 +155,41 @@ export default function LiveScorePage() {
   const tdm  = isTDM(scoreboard);
   const allies = scoreboard.filter(p => p.team === 'allies');
   const axis   = scoreboard.filter(p => p.team === 'axis');
+
+  // ── Visibility gate ───────────────────────────────────────────────────────
+  if (liveScoreVisible === null) {
+    // Still loading the setting — show a minimal dark screen.
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#0a0c10]">
+        <span className="font-mono text-xs text-gray-600 animate-pulse">Loading…</span>
+      </main>
+    );
+  }
+
+  if (!liveScoreVisible) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#0a0c10] text-white px-4 text-center">
+        {/* Scan-line overlay */}
+        <div
+          className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]"
+          style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff, #fff 1px, transparent 1px, transparent 4px)' }}
+        />
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="text-5xl opacity-30">📡</div>
+          <h1 className="text-3xl font-black tracking-tight">
+            <span className="text-red-500">COD</span>FEST
+            <span className="ml-3 text-xl font-light text-gray-400">Live Score</span>
+          </h1>
+          <div className="rounded-full border border-gray-700 bg-gray-800/50 px-5 py-2 font-mono text-xs font-bold uppercase tracking-widest text-gray-400">
+            ⏳ Coming Soon
+          </div>
+          <p className="max-w-xs font-mono text-sm text-gray-600">
+            Live scoring is not active right now. Check back when the tournament goes live!
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#0a0c10] text-white selection:bg-red-500/30">
