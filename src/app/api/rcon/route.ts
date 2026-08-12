@@ -3,9 +3,9 @@ import dgram from 'dgram';
 
 export const dynamic = 'force-dynamic';
 
-const SERVER_IP = '127.0.0.1';
-const SERVER_PORT = 28100;
-const RCON_PASS = 'admin123';
+const SERVER_IP = process.env.RCON_HOST || '127.0.0.1';
+const SERVER_PORT = parseInt(process.env.RCON_PORT || '28100', 10);
+const RCON_PASS = process.env.RCON_PASSWORD || '';
 
 function sendRcon(command: string): Promise<string> {
   return new Promise((resolve, reject) => {
