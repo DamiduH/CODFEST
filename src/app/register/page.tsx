@@ -13,6 +13,23 @@ interface MemberRow {
 
 const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "", im_number: "" });
 
+/** Validates Sri Lanka mobile: +94 followed by 9 digits (spaces allowed) */
+function validatePhone(v: string): string {
+  if (!v) return "";
+  // Strip spaces then check format
+  const stripped = v.replace(/\s/g, "");
+  if (/[^\d\+]/.test(stripped)) return "Only digits and + allowed";
+  if (!/^\+94\d{9}$/.test(stripped)) return "Format: +94 XXX XXX XXX (9 digits after +94)";
+  return "";
+}
+
+/** Validates IM number: IM/YYYY/NNN */
+function validateIm(v: string): string {
+  if (!v) return "";
+  if (!/^IM\/\d{4}\/\d{3}$/.test(v)) return "Format: IM/0000/000 (e.g. IM/2024/123)";
+  return "";
+}
+
 function memberFromPlayer(p: any): MemberRow {
   return {
     member_name: p.player_name ?? "",
@@ -741,22 +758,27 @@ export default function RegisterPage() {
                   <div>
                     <label className="label text-[11px]">Mobile number</label>
                     <input
-                      className="input"
+                      className={`input ${
+                        validatePhone(m.phone) ? "border-red-500/70 focus:border-red-500" : ""
+                      }`}
                       type="tel"
-                      pattern="^[\d\s\+\-]{10,15}$"
-                      title="Please enter a valid phone number (10 to 15 digits)"
-                      placeholder="+94 XXX XXX XXXX"
+                      placeholder="+94 XXX XXX XXX"
                       required
                       value={m.phone}
                       onChange={(e) =>
                         setMembers(members.map((x, j) => (j === i ? { ...x, phone: e.target.value } : x)))
                       }
                     />
+                    {validatePhone(m.phone) && (
+                      <p className="mt-1 font-mono text-[10px] text-red-400">{validatePhone(m.phone)}</p>
+                    )}
                   </div>
                   <div>
                     <label className="label text-[11px]">IM Number</label>
                     <input
-                      className="input"
+                      className={`input ${
+                        validateIm(m.im_number) ? "border-red-500/70 focus:border-red-500" : ""
+                      }`}
                       placeholder="IM/0000/000"
                       required
                       pattern="^IM\/\d{4}\/\d{3}$"
@@ -766,6 +788,9 @@ export default function RegisterPage() {
                         setMembers(members.map((x, j) => (j === i ? { ...x, im_number: e.target.value } : x)))
                       }
                     />
+                    {validateIm(m.im_number) && (
+                      <p className="mt-1 font-mono text-[10px] text-red-400">{validateIm(m.im_number)}</p>
+                    )}
                   </div>
                 </div>
               </div>
