@@ -558,14 +558,20 @@ export default function RegisterPage() {
           <div>
             <label className="label">IM Number</label>
             <input
-              className="input"
+              className={`input ${
+                validateIm(leaderIm) ? "border-red-500/70 focus:border-red-500" : ""
+              }`}
               placeholder="IM/0000/000"
               required
+              maxLength={11}
               pattern="^IM\/\d{4}\/\d{3}$"
               title="Format: IM/0000/000 (e.g. IM/2024/123)"
               value={leaderIm}
               onChange={(e) => setLeaderIm(e.target.value)}
             />
+            {validateIm(leaderIm) && (
+              <p className="mt-1 font-mono text-[10px] text-red-400">{validateIm(leaderIm)}</p>
+            )}
           </div>
           <button className="btn-primary w-full" disabled={busy}>
             {busy ? "Sending OTP…" : "Send OTP →"}
@@ -688,12 +694,26 @@ export default function RegisterPage() {
           <div>
             <label className="label">Leader&apos;s mobile number</label>
             <input
-              className="input"
+              className={`input ${
+                validatePhone(captainPhone) ? "border-red-500/70 focus:border-red-500" : ""
+              }`}
               required
-              placeholder="+94 XXX XXX XXXX"
+              maxLength={13}
+              placeholder="+94 XXX XXX XXX"
               value={captainPhone}
-              onChange={(e) => setCaptainPhone(e.target.value)}
+              onChange={(e) => {
+                let raw = e.target.value;
+                if (!raw.startsWith("+94")) {
+                  raw = "+94" + raw.replace(/^\+?9?4?/, "").replace(/\D/g, "");
+                }
+                const prefix = "+94";
+                const digits = raw.slice(prefix.length).replace(/\D/g, "").slice(0, 9);
+                setCaptainPhone(prefix + digits);
+              }}
             />
+            {validatePhone(captainPhone) && (
+              <p className="mt-1 font-mono text-[10px] text-red-400">{validatePhone(captainPhone)}</p>
+            )}
           </div>
           {!isEdit && (
             <div className="sm:col-span-2">
