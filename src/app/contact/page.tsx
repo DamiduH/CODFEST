@@ -2,16 +2,16 @@ const contacts = [
   {
     name: "Savindu Mihiran",
     email: "savindumihiran12345@gmail.com",
+    phone: { value: "+94 76 293 4155", href: "tel:+94762934155" },
     code: "CR-01",
   },
   {
     name: "Tharu Silva",
     email: "shehantharu2095@gmail.com",
+    phone: { value: "+94 71 230 2182", href: "tel:+94712302182" },
     code: "CR-02",
   },
 ] as const;
-
-const phone = { value: "+94 76 293 4155", href: "tel:+94762934155" };
 
 function PhoneIcon() {
   return (
@@ -73,7 +73,7 @@ export default function ContactPage() {
 
               <div className="mt-5 space-y-2">
                 <a
-                  href={phone.href}
+                  href={contact.phone.href}
                   className="flex items-center gap-3 border border-white/10 bg-black/35 p-2.5 transition hover:border-ember-500/60 hover:bg-black/60 sm:p-3"
                 >
                   <span className="grid h-9 w-9 shrink-0 place-items-center border border-ember-500/60 text-ember-400">
@@ -81,7 +81,7 @@ export default function ContactPage() {
                   </span>
                   <span className="min-w-0">
                     <span className="block font-mono text-[9px] uppercase tracking-[0.18em] text-ember-400">Phone</span>
-                    <span className="block font-display text-lg tracking-[0.05em] text-white sm:text-xl">{phone.value}</span>
+                    <span className="block font-display text-lg tracking-[0.05em] text-white sm:text-xl">{contact.phone.value}</span>
                   </span>
                 </a>
 
