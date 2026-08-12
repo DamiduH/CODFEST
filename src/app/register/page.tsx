@@ -69,7 +69,7 @@ export default function RegisterPage() {
   const [teamName, setTeamName] = useState("");
   const [captainPhone, setCaptainPhone] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
-  const [members, setMembers] = useState<MemberRow[]>([emptyMember()]);
+  const [members, setMembers] = useState<MemberRow[]>([emptyMember(), emptyMember(), emptyMember(), emptyMember()]);
   const [agreed, setAgreed] = useState(false);
 
   // Edit mode — captain already has a team
@@ -545,8 +545,10 @@ export default function RegisterPage() {
             <label className="label">IM Number</label>
             <input
               className="input"
-              placeholder="IM_NUMBER"
+              placeholder="IM/0000/000"
               required
+              pattern="^IM\/\d{4}\/\d{3}$"
+              title="Format: IM/0000/000 (e.g. IM/2024/123)"
               value={leaderIm}
               onChange={(e) => setLeaderIm(e.target.value)}
             />
@@ -697,17 +699,8 @@ export default function RegisterPage() {
           <div className="flex items-center justify-between">
             <label className="label !mb-0">
               Team members{" "}
-              <span className="text-zinc-500">(up to 5, not including you)</span>
+              <span className="text-zinc-500">(4 members, not including you)</span>
             </label>
-            {members.length < 5 && (
-              <button
-                type="button"
-                className="text-sm font-semibold text-ember-400 hover:text-ember-500"
-                onClick={() => setMembers([...members, emptyMember()])}
-              >
-                + Add member
-              </button>
-            )}
           </div>
 
           <div className="mt-3 space-y-3">
@@ -764,8 +757,10 @@ export default function RegisterPage() {
                     <label className="label text-[11px]">IM Number</label>
                     <input
                       className="input"
-                      placeholder="IM_NUMBER"
+                      placeholder="IM/0000/000"
                       required
+                      pattern="^IM\/\d{4}\/\d{3}$"
+                      title="Format: IM/0000/000 (e.g. IM/2024/123)"
                       value={m.im_number}
                       onChange={(e) =>
                         setMembers(members.map((x, j) => (j === i ? { ...x, im_number: e.target.value } : x)))
@@ -773,16 +768,6 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
-                {members.length > 1 && (
-                  <button
-                    type="button"
-                    className="absolute right-3 top-3 font-mono text-xs text-zinc-600 hover:text-red-400"
-                    onClick={() => setMembers(members.filter((_, j) => j !== i))}
-                    aria-label="Remove member"
-                  >
-                    ✕ remove
-                  </button>
-                )}
               </div>
             ))}
           </div>
