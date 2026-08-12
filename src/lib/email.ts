@@ -93,7 +93,7 @@ function getOtpEmailHtml(name: string, otp: string): string {
             <!-- Header / Logo -->
             <tr>
               <td align="center" style="background-color:#000000; padding: 36px 24px;" class="px-24">
-                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/logo.png" alt="CODFEST Logo" width="160" class="fluid" style="display:block; width:160px; max-width:60%; height:auto; margin:0 auto;">
+                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@latest/public/logo.png" alt="CODFEST Logo" width="160" class="fluid" style="display:block; width:160px; max-width:60%; height:auto; margin:0 auto;">
               </td>
             </tr>
 
@@ -267,7 +267,7 @@ function getWelcomeEmailHtml({
             <!-- Header / Logo -->
             <tr>
               <td align="center" style="background-color:#000000; padding: 36px 24px;" class="px-24">
-                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/logo.png" alt="CODFEST Logo" width="170" class="fluid" style="display:block; width:170px; max-width:60%; height:auto; margin:0 auto;">
+                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@latest/public/logo.png" alt="CODFEST Logo" width="170" class="fluid" style="display:block; width:170px; max-width:60%; height:auto; margin:0 auto;">
               </td>
             </tr>
 
@@ -329,7 +329,7 @@ function getWelcomeEmailHtml({
                 <table role="presentation" cellpadding="0" cellspacing="0" align="center">
                   <tr>
                     <td align="center" class="btn" style="background-color:#000000; border-radius:8px;">
-                      <a href="https://codfestmit.vercel.app/" target="_blank" style="display:inline-block; padding:15px 36px; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:700; color:#8cfd30; text-decoration:none; border-radius:8px;">
+                      <a href="https://codfest.imssa.lk/" target="_blank" style="display:inline-block; padding:15px 36px; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:700; color:#8cfd30; text-decoration:none; border-radius:8px;">
                         View Event Details
                       </a>
                     </td>
