@@ -22,7 +22,7 @@ export default async function HomePage() {
       .order("scheduled_time")
       .limit(1)
       .maybeSingle(),
-    supa.from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
+    supa.from("announcements").select("*").neq("title", "__SYSTEM_SETTINGS__").order("created_at", { ascending: false }).limit(3),
   ]);
 
   return (
