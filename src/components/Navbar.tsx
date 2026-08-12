@@ -13,6 +13,8 @@ const LINKS = [
   { href: "/matches", label: "Matches" },
   { href: "/bracket", label: "Bracket" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/scoreboard", label: "Killfeed" },
+  { href: "/live-server", label: "Live Server" },
   { href: "/rules", label: "Rules" },
   { href: "/contact", label: "Contact" },
 ];
@@ -29,10 +31,19 @@ export default function Navbar() {
     window.addEventListener("scroll", updateNavbar, { passive: true });
     return () => window.removeEventListener("scroll", updateNavbar);
   }, []);
+
   const role = session?.user?.role;
 
+  // Filter out links that are gated by a setting flag.
+  const visibleLinks = LINKS.filter((l) => {
+    return true;
+  });
+
   const roleLinks = [
-    ...(role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
+    ...(role === "admin" ? [
+      { href: "/livescore", label: "Live Score", badge: "LIVE" },
+      { href: "/admin", label: "Admin" }
+    ] : []),
   ];
 
   return (
@@ -56,19 +67,25 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
-          {LINKS.map((l) => {
+          {visibleLinks.map((l) => {
             const active = pathname === l.href;
             return (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`relative px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] transition-colors ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] transition-colors ${
                   active
                     ? "text-ember-500 font-bold"
                     : "text-zinc-300 hover:text-white"
                 }`}
               >
                 {l.label}
+                {(l as any).badge && (
+                  <span className="flex items-center gap-1 rounded-full bg-green-900/60 border border-green-500/30 px-1.5 py-0.5 font-mono text-[8px] font-bold text-green-400">
+                    <span className="h-1 w-1 rounded-full bg-green-400 animate-pulse" />
+                    {(l as any).badge}
+                  </span>
+                )}
                 {active && (
                   <motion.div
                     layoutId="nav-underline"
@@ -153,7 +170,7 @@ export default function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="site-gutter overflow-hidden border-t border-night-700 bg-night-900 py-3 lg:hidden"
           >
-            {[...LINKS, ...roleLinks].map((l) => (
+            {[...visibleLinks, ...roleLinks].map((l) => (
               <Link
                 key={l.href}
                 href={l.href}

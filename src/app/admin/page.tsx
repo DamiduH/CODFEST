@@ -234,7 +234,7 @@ function FixturesPanel() {
  */
 function LiveScorePanel() {
   const [liveMatches, setLiveMatches] = useState<Match[]>([]);
-  const [scores, setScores] = useState<Record<string, { s1: string; s2: string }>>({});
+  const [scores, setScores] = useState<Record<string, { s1: string; s2: string }>>({})
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [feedback, setFeedback] = useState<Record<string, string>>({});
 
@@ -289,6 +289,24 @@ function LiveScorePanel() {
 
   return (
     <div>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded border border-night-700 bg-night-850 px-5 py-4">
+        <div>
+          <p className="font-display text-sm font-bold uppercase tracking-wide text-white">
+            Admin Live Score View
+          </p>
+          <p className="mt-0.5 font-mono text-xs text-zinc-500">
+            The /livescore page is restricted to admins only. Open it to see the live feed.
+          </p>
+        </div>
+        <Link
+          href="/livescore"
+          target="_blank"
+          className="btn-primary !px-4 !py-2 !text-xs whitespace-nowrap"
+        >
+          Open Live Score ↗
+        </Link>
+      </div>
+
       <div className="mb-4 border border-ember-400/30 bg-ember-600/10 px-4 py-3 font-mono text-xs text-ember-300">
         🖥️ SERVER LAPTOP — type the current in-game score and hit <strong>Push</strong>.
         All connected browsers update instantly via Socket.IO.

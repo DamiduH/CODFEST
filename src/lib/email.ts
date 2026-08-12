@@ -203,7 +203,6 @@ interface WelcomeEmailProps {
   teamName: string;
   regId: string;
   date?: string;
-  time?: string;
   venue?: string;
 }
 
@@ -211,9 +210,8 @@ function getWelcomeEmailHtml({
   name,
   teamName,
   regId,
-  date = "Sept 01, 2026",
-  time = "06:00 PM (+05:30)",
-  venue = "Online / CODFEST Platform",
+  date = "August 15, 2026",
+  venue = "A4 Multimedia Room",
 }: WelcomeEmailProps): string {
   const escapedName = escapeHtml(name);
   const escapedTeamName = escapeHtml(teamName);
@@ -308,16 +306,12 @@ function getWelcomeEmailHtml({
                             <p style="margin:4px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:600; color:#000000;">${escapeHtml(date)}</p>
                           </td>
                           <td class="info-cell" width="50%" valign="top" style="padding: 8px 0;">
-                            <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#8b9a7a;">Time</p>
-                            <p style="margin:4px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:600; color:#000000;">${escapeHtml(time)}</p>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="info-cell" width="50%" valign="top" style="padding: 8px 0;">
                             <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#8b9a7a;">Venue</p>
                             <p style="margin:4px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:600; color:#000000;">${escapeHtml(venue)}</p>
                           </td>
-                          <td class="info-cell" width="50%" valign="top" style="padding: 8px 0;">
+                        </tr>
+                        <tr>
+                          <td class="info-cell" width="100%" colspan="2" valign="top" style="padding: 8px 0;">
                             <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#8b9a7a;">Team / ID</p>
                             <p style="margin:4px 0 0 0; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:600; color:#000000;">${displayRegId}</p>
                           </td>
