@@ -180,7 +180,7 @@ function getOtpEmailHtml(name: string, otp: string): string {
             <tr>
               <td align="center" class="px-24" style="padding: 4px 40px 36px 40px;">
                 <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  Organized by IMSSA &amp; MIT/IT, Faculty of Science
+                  Organized by the Industrial Management Science Students Association
                 </p>
                 <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
                   University of Kelaniya &middot; <a href="https://codfest.imssa.lk/" style="color:#000000; text-decoration:underline;">codfest.imssa.lk/</a>
@@ -387,7 +387,7 @@ function getWelcomeEmailHtml({
             <tr>
               <td align="center" class="px-24" style="padding: 4px 40px 36px 40px;">
                 <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  Organized by IMSSA &amp; MIT/IT, Faculty of Science
+                  Organized by the Industrial Management Science Students Association
                 </p>
                 <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
                   University of Kelaniya &middot; <a href="https://codfest.imssa.lk/" style="color:#000000; text-decoration:underline;">codfest.imssa.lk/</a>

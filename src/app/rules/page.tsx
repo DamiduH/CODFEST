@@ -111,7 +111,7 @@ const tournamentStages: Record<Division, { title: string; rules: string[]; empha
       ],
     },
     {
-      title: "Grand Finals (3 Maps, Cumulative Score)",
+      title: "Grand Finals — Best of 3 Maps",
       rules: [
         "Win condition: The team with the highest kill total wins the map.",
         "Map 3 is played only if the series is tied 1–1 after the first two maps.",
