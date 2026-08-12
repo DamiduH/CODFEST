@@ -334,6 +334,10 @@ export default function RegisterPage() {
     setError(null);
     if (!agreed) return setError("You must accept the rules and code of conduct");
     if (members.some((m) => !m.member_name)) return setError("Every player needs a name");
+    if (validatePhone(captainPhone)) return setError("Leader's mobile number is invalid");
+    if (members.some((m) => validatePhone(m.phone))) return setError("One or more members have an invalid mobile number");
+    if (members.some((m) => validateIm(m.im_number))) return setError("One or more members have an invalid IM number");
+    if (members.some((m) => validateEmail(m.email))) return setError("One or more members have an invalid email address");
     setBusy(true);
 
     const payload = {
@@ -368,6 +372,10 @@ export default function RegisterPage() {
     if (!existingTeamId) return;
     setError(null);
     if (members.some((m) => !m.member_name)) return setError("Every player needs a name");
+    if (validatePhone(captainPhone)) return setError("Leader's mobile number is invalid");
+    if (members.some((m) => validatePhone(m.phone))) return setError("One or more members have an invalid mobile number");
+    if (members.some((m) => validateIm(m.im_number))) return setError("One or more members have an invalid IM number");
+    if (members.some((m) => validateEmail(m.email))) return setError("One or more members have an invalid email address");
     setBusy(true);
 
     const body = {

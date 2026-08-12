@@ -23,7 +23,7 @@ export default function TeamsPage() {
   useEffect(() => {
     fetch("/api/teams", { cache: "no-store" })
       .then((r) => r.json())
-      .then((j) => setTeams(j.teams ?? []))
+      .then((j) => setTeams((j.teams ?? []).filter((t: any) => t.team_name !== "DEMOO")))
       .finally(() => setLoading(false));
   }, []);
 
