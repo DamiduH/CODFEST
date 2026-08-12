@@ -44,7 +44,7 @@ export default function Navbar() {
           : "border-transparent bg-transparent"
       }`}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+      <div className="site-gutter mx-auto flex h-16 max-w-7xl items-center justify-between drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
         <Link href="/" className="group flex items-center gap-3">
           <Image
             src="/NavBarLogo.png"
@@ -54,9 +54,6 @@ export default function Navbar() {
             priority
             className="h-auto w-32 transition-opacity group-hover:opacity-80 sm:w-36"
           />
-          <span className="hidden border border-ember-600/30 bg-ember-600/10 px-1.5 py-0.5 font-mono text-[10px] text-ember-600 transition-colors group-hover:border-ember-600 md:inline">
-            [OP:ACTIVE]
-          </span>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
@@ -161,7 +158,7 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden border-t border-night-700 bg-night-900 px-4 py-3 lg:hidden"
+            className="site-gutter overflow-hidden border-t border-night-700 bg-night-900 py-3 lg:hidden"
           >
             {[...LINKS, ...roleLinks].map((l) => (
               <Link

@@ -43,7 +43,7 @@ export default function CaptainDashboard() {
 
   if (authStatus === "unauthenticated") {
     return (
-      <div className="mx-auto max-w-md px-4 py-20 text-center">
+      <div className="site-gutter mx-auto max-w-md py-20 text-center">
         <h1 className="section-title">Team dashboard</h1>
         <p className="mt-3 text-zinc-400">
           Access your team dashboard by verifying your captain email via OTP.
@@ -58,7 +58,7 @@ export default function CaptainDashboard() {
 
   if (!team) {
     return (
-      <div className="mx-auto max-w-md px-4 py-20 text-center">
+      <div className="site-gutter mx-auto max-w-md py-20 text-center">
         <h1 className="section-title">No team yet</h1>
         <p className="mt-3 text-zinc-400">You haven&apos;t registered a team with this account.</p>
         <Link href="/register" className="btn-primary mt-6">Register your team</Link>
@@ -71,7 +71,7 @@ export default function CaptainDashboard() {
   const finished = matches.filter((m) => m.status === "finished");
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="site-gutter mx-auto max-w-7xl py-10">
       <div className="card flex flex-wrap items-center justify-between gap-4 p-6">
         <TeamMark name={team.team_name} logoUrl={team.logo_url} size={52} />
         <div className="flex items-center gap-4">

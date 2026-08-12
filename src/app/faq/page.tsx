@@ -17,7 +17,7 @@ export default function FaqPage() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="site-gutter mx-auto max-w-7xl py-10">
       <h1 className="section-title">Frequently Asked Questions</h1>
       <div className="mt-6 space-y-3">
         {FAQS.map(([q, a], i) => (

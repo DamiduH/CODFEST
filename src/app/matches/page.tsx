@@ -40,7 +40,7 @@ export default function MatchesPage() {
   const tabs = isAdmin ? [...TABS, { key: "disputed", label: "Disputed" }] : [...TABS];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10">
+    <div className="site-gutter mx-auto max-w-7xl py-10">
       <h1 className="section-title">Active Queue</h1>
       <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-zinc-500">
         // Live feed — updates in real time, no refresh needed

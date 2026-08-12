@@ -383,7 +383,7 @@ export default function RegisterPage() {
   /* ─── Success screen (new registration) ─── */
   if (done) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center">
+      <div className="site-gutter mx-auto max-w-lg py-20 text-center">
         <p className="font-mono text-sm tracking-[0.1em] text-ember-400">// TRANSMISSION RECEIVED</p>
         <h1 className="section-title mt-3">Registration Submitted</h1>
         <p className="mt-3 text-zinc-400">
@@ -401,7 +401,7 @@ export default function RegisterPage() {
   /* ─── OTP verification screen ─── */
   if (step1 === "otp" && pendingVerify) {
     return (
-      <div className="mx-auto max-w-md px-4 py-16">
+      <div className="site-gutter mx-auto max-w-md py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
           <h1 className="section-title">Verify Email</h1>
           <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
@@ -463,7 +463,7 @@ export default function RegisterPage() {
   /* ─── Step 1: email-only landing (initial check) ─── */
   if (!session && step1 === "email") {
     return (
-      <div className="mx-auto max-w-md px-4 py-16">
+      <div className="site-gutter mx-auto max-w-md py-16">
         <div className="border-l-4 border-l-ember-400 pl-4">
           <h1 className="section-title">Squad Registration</h1>
           <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">
@@ -618,7 +618,7 @@ export default function RegisterPage() {
   const onSubmit = isEdit ? saveTeamEdit : registerTeam;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="site-gutter mx-auto max-w-2xl py-12">
       <div className="border-l-4 border-l-ember-400 pl-4">
         <h1 className="section-title">{formTitle}</h1>
         <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-ember-500">

@@ -32,7 +32,7 @@ export default function ScoreboardPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white p-8">
+    <main className="site-gutter min-h-screen bg-gray-950 py-10 text-white">
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-extrabold tracking-wide text-red-500">
