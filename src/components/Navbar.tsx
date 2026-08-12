@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/teams", label: "Teams" },
   { href: "/matches", label: "Matches" },
   { href: "/bracket", label: "Bracket" },
+  { href: "/livescore", label: "Live Score", badge: "LIVE" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/rules", label: "Rules" },
   { href: "/contact", label: "Contact" },
@@ -65,13 +66,19 @@ export default function Navbar() {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`relative px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] transition-colors ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] transition-colors ${
                   active
                     ? "text-ember-500 font-bold"
                     : "text-zinc-300 hover:text-white"
                 }`}
               >
                 {l.label}
+                {(l as any).badge && (
+                  <span className="flex items-center gap-1 rounded-full bg-green-900/60 border border-green-500/30 px-1.5 py-0.5 font-mono text-[8px] font-bold text-green-400">
+                    <span className="h-1 w-1 rounded-full bg-green-400 animate-pulse" />
+                    {(l as any).badge}
+                  </span>
+                )}
                 {active && (
                   <motion.div
                     layoutId="nav-underline"
