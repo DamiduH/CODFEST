@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useRef } from 'react';
 import { getPusherClient } from '@/lib/pusher';
+import { useSession } from 'next-auth/react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface KillEvent {
@@ -93,19 +94,8 @@ export default function LiveScorePage() {
   const [connected,   setConnected]   = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
-  // ── Visibility gate ───────────────────────────────────────────────────────
-  const [liveScoreVisible, setLiveScoreVisible] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((j) => {
-        // Explicit false = hidden. Anything else (true or missing key) = visible.
-        const val = j.settings?.live_score_visible;
-        setLiveScoreVisible(val === false ? false : true);
-      })
-      .catch(() => setLiveScoreVisible(false)); // fail closed — hide on error
-  }, []);
+  const { data: session, status } = useSession();
+  const isAdmin = session?.user?.role === 'admin';
 
   useEffect(() => {
     const pusher  = getPusherClient();
@@ -160,9 +150,8 @@ export default function LiveScorePage() {
   const allies = scoreboard.filter(p => p.team === 'allies');
   const axis   = scoreboard.filter(p => p.team === 'axis');
 
-  // ── Visibility gate ───────────────────────────────────────────────────────
-  if (liveScoreVisible === null) {
-    // Still loading the setting — show a minimal dark screen.
+  // ── Admin Gate ───────────────────────────────────────────────────────
+  if (status === 'loading') {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0a0c10]">
         <span className="font-mono text-xs text-gray-600 animate-pulse">Loading…</span>
@@ -170,7 +159,7 @@ export default function LiveScorePage() {
     );
   }
 
-  if (!liveScoreVisible) {
+  if (!isAdmin) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#0a0c10] text-white px-4 text-center">
         {/* Scan-line overlay */}
@@ -179,16 +168,15 @@ export default function LiveScorePage() {
           style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff, #fff 1px, transparent 1px, transparent 4px)' }}
         />
         <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="text-5xl opacity-30">📡</div>
+          <div className="text-5xl opacity-30">🛡️</div>
           <h1 className="text-3xl font-black tracking-tight">
-            <span className="text-red-500">COD</span>FEST
-            <span className="ml-3 text-xl font-light text-gray-400">Live Score</span>
+            <span className="text-red-500">ADMIN</span> ONLY
           </h1>
-          <div className="rounded-full border border-gray-700 bg-gray-800/50 px-5 py-2 font-mono text-xs font-bold uppercase tracking-widest text-gray-400">
-            ⏳ Coming Soon
+          <div className="rounded-full border border-red-900/50 bg-red-900/20 px-5 py-2 font-mono text-xs font-bold uppercase tracking-widest text-red-400">
+            Access Denied
           </div>
           <p className="max-w-xs font-mono text-sm text-gray-600">
-            Live scoring is not active right now. Check back when the tournament goes live!
+            The live score page is restricted to tournament administrators.
           </p>
         </div>
       </main>

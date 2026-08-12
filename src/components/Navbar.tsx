@@ -12,7 +12,6 @@ const LINKS = [
   { href: "/teams", label: "Teams" },
   { href: "/matches", label: "Matches" },
   { href: "/bracket", label: "Bracket" },
-  { href: "/livescore", label: "Live Score", badge: "LIVE", settingKey: "live_score_visible" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/rules", label: "Rules" },
   { href: "/contact", label: "Contact" },
@@ -23,7 +22,6 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [liveScoreVisible, setLiveScoreVisible] = useState(false);
 
   useEffect(() => {
     const updateNavbar = () => setScrolled(window.scrollY > 12);
@@ -32,28 +30,18 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", updateNavbar);
   }, []);
 
-  // Fetch site settings to conditionally show/hide the Live Score nav link.
-  // Defaults to false (hidden) until the API confirms it's enabled.
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((j) => {
-        const val = j.settings?.live_score_visible;
-        setLiveScoreVisible(val === false ? false : true);
-      })
-      .catch(() => setLiveScoreVisible(false)); // fail closed
-  }, []);
-
   const role = session?.user?.role;
 
   // Filter out links that are gated by a setting flag.
   const visibleLinks = LINKS.filter((l) => {
-    if ((l as any).settingKey === "live_score_visible") return liveScoreVisible;
     return true;
   });
 
   const roleLinks = [
-    ...(role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
+    ...(role === "admin" ? [
+      { href: "/livescore", label: "Live Score", badge: "LIVE" },
+      { href: "/admin", label: "Admin" }
+    ] : []),
   ];
 
   return (
