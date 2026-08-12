@@ -167,7 +167,7 @@ function getOtpEmailHtml(name: string, otp: string): string {
                       <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/imssa-logo.png" alt="IMSSA Logo" height="42" style="display:block; height:42px; width:auto;">
                     </td>
                     <td style="padding: 0 14px;">
-                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT-IT Logo" height="42" style="display:block; height:42px; width:auto;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT/IT Logo" height="42" style="display:block; height:42px; width:auto;">
                     </td>
                     <td style="padding: 0 14px;">
                       <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/uok-crest.png" alt="University of Kelaniya Crest" height="42" style="display:block; height:42px; width:auto;">
@@ -180,10 +180,10 @@ function getOtpEmailHtml(name: string, otp: string): string {
             <tr>
               <td align="center" class="px-24" style="padding: 4px 40px 36px 40px;">
                 <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  Organized by IMSSA &amp; MIT-IT, Faculty of Commerce and Management Studies
+                  Organized by IMSSA &amp; MIT/IT, Faculty of Science
                 </p>
                 <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  University of Kelaniya &middot; <a href="https://codfestmit.vercel.app/" style="color:#000000; text-decoration:underline;">codfestmit.vercel.app</a>
+                  University of Kelaniya &middot; <a href="https://codfest.imssa.lk/" style="color:#000000; text-decoration:underline;">codfest.imssa.lk/</a>
                 </p>
               </td>
             </tr>
@@ -374,7 +374,7 @@ function getWelcomeEmailHtml({
                       <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/imssa-logo.png" alt="IMSSA Logo" height="42" style="display:block; height:42px; width:auto;">
                     </td>
                     <td style="padding: 0 14px;">
-                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT-IT Logo" height="42" style="display:block; height:42px; width:auto;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT/IT Logo" height="42" style="display:block; height:42px; width:auto;">
                     </td>
                     <td style="padding: 0 14px;">
                       <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/uok-crest.png" alt="University of Kelaniya Crest" height="42" style="display:block; height:42px; width:auto;">
@@ -387,10 +387,10 @@ function getWelcomeEmailHtml({
             <tr>
               <td align="center" class="px-24" style="padding: 4px 40px 36px 40px;">
                 <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  Organized by IMSSA &amp; MIT-IT, Faculty of Commerce and Management Studies
+                  Organized by IMSSA &amp; MIT/IT, Faculty of Science
                 </p>
                 <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  University of Kelaniya &middot; <a href="https://codfestmit.vercel.app/" style="color:#000000; text-decoration:underline;">codfestmit.vercel.app</a>
+                  University of Kelaniya &middot; <a href="https://codfest.imssa.lk/" style="color:#000000; text-decoration:underline;">codfest.imssa.lk/</a>
                 </p>
               </td>
             </tr>
