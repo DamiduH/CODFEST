@@ -21,7 +21,7 @@ export default function TeamsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/teams")
+    fetch("/api/teams", { cache: "no-store" })
       .then((r) => r.json())
       .then((j) => setTeams(j.teams ?? []))
       .finally(() => setLoading(false));

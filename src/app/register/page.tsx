@@ -13,6 +13,27 @@ interface MemberRow {
 
 const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "", im_number: "" });
 
+/** Validates Sri Lanka mobile: +94 followed by 9 digits */
+function validatePhone(v: string): string {
+  if (!v) return "";
+  if (!/^\+94\d{9}$/.test(v)) return "Format: +94 XXX XXX XXX (9 digits after +94)";
+  return "";
+}
+
+/** Validates Gmail address */
+function validateEmail(v: string): string {
+  if (!v) return "";
+  if (!v.toLowerCase().endsWith("@gmail.com")) return "Must be a @gmail.com address";
+  return "";
+}
+
+/** Validates IM number: IM/YYYY/NNN */
+function validateIm(v: string): string {
+  if (!v) return "";
+  if (!/^IM\/\d{4}\/\d{3}$/.test(v)) return "Format: IM/0000/000 (e.g. IM/2024/123)";
+  return "";
+}
+
 function memberFromPlayer(p: any): MemberRow {
   return {
     member_name: p.player_name ?? "",
@@ -69,7 +90,7 @@ export default function RegisterPage() {
   const [teamName, setTeamName] = useState("");
   const [captainPhone, setCaptainPhone] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
-  const [members, setMembers] = useState<MemberRow[]>([emptyMember()]);
+  const [members, setMembers] = useState<MemberRow[]>([emptyMember(), emptyMember(), emptyMember(), emptyMember()]);
   const [agreed, setAgreed] = useState(false);
 
   // Edit mode — captain already has a team
@@ -484,13 +505,20 @@ export default function RegisterPage() {
           <div>
             <label className="label">Leader&apos;s email</label>
             <input
-              className="input"
-              placeholder="LEADER@DOMAIN"
+              className={`input ${
+                validateEmail(emailInput) ? "border-red-500/70 focus:border-red-500" : ""
+              }`}
+              placeholder="leader@gmail.com"
               type="email"
               required
+              pattern="^[a-zA-Z0-9._%+\-]+@gmail\.com$"
+              title="Must be a @gmail.com address"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
             />
+            {validateEmail(emailInput) && (
+              <p className="mt-1 font-mono text-[10px] text-red-400">{validateEmail(emailInput)}</p>
+            )}
           </div>
           <button className="btn-primary w-full" disabled={checkingEmail}>
             {checkingEmail ? "Checking…" : "Continue →"}
@@ -544,12 +572,20 @@ export default function RegisterPage() {
           <div>
             <label className="label">IM Number</label>
             <input
-              className="input"
-              placeholder="IM_NUMBER"
+              className={`input ${
+                validateIm(leaderIm) ? "border-red-500/70 focus:border-red-500" : ""
+              }`}
+              placeholder="IM/0000/000"
               required
+              maxLength={11}
+              pattern="^IM\/\d{4}\/\d{3}$"
+              title="Format: IM/0000/000 (e.g. IM/2024/123)"
               value={leaderIm}
               onChange={(e) => setLeaderIm(e.target.value)}
             />
+            {validateIm(leaderIm) && (
+              <p className="mt-1 font-mono text-[10px] text-red-400">{validateIm(leaderIm)}</p>
+            )}
           </div>
           <button className="btn-primary w-full" disabled={busy}>
             {busy ? "Sending OTP…" : "Send OTP →"}
@@ -672,12 +708,26 @@ export default function RegisterPage() {
           <div>
             <label className="label">Leader&apos;s mobile number</label>
             <input
-              className="input"
+              className={`input ${
+                validatePhone(captainPhone) ? "border-red-500/70 focus:border-red-500" : ""
+              }`}
               required
-              placeholder="+94 XXX XXX XXXX"
+              maxLength={13}
+              placeholder="+94 XXX XXX XXX"
               value={captainPhone}
-              onChange={(e) => setCaptainPhone(e.target.value)}
+              onChange={(e) => {
+                let raw = e.target.value;
+                if (!raw.startsWith("+94")) {
+                  raw = "+94" + raw.replace(/^\+?9?4?/, "").replace(/\D/g, "");
+                }
+                const prefix = "+94";
+                const digits = raw.slice(prefix.length).replace(/\D/g, "").slice(0, 9);
+                setCaptainPhone(prefix + digits);
+              }}
             />
+            {validatePhone(captainPhone) && (
+              <p className="mt-1 font-mono text-[10px] text-red-400">{validatePhone(captainPhone)}</p>
+            )}
           </div>
           {!isEdit && (
             <div className="sm:col-span-2">
@@ -697,17 +747,8 @@ export default function RegisterPage() {
           <div className="flex items-center justify-between">
             <label className="label !mb-0">
               Team members{" "}
-              <span className="text-zinc-500">(up to 5, not including you)</span>
+              <span className="text-zinc-500">(4 members, not including you)</span>
             </label>
-            {members.length < 5 && (
-              <button
-                type="button"
-                className="text-sm font-semibold text-ember-400 hover:text-ember-500"
-                onClick={() => setMembers([...members, emptyMember()])}
-              >
-                + Add member
-              </button>
-            )}
           </div>
 
           <div className="mt-3 space-y-3">
@@ -735,50 +776,72 @@ export default function RegisterPage() {
                   <div>
                     <label className="label text-[11px]">Email address</label>
                     <input
-                      className="input"
+                      className={`input ${
+                        validateEmail(m.email) ? "border-red-500/70 focus:border-red-500" : ""
+                      }`}
                       type="email"
-                      placeholder="member@domain"
+                      required
+                      pattern="^[a-zA-Z0-9._%+\-]+@gmail\.com$"
+                      title="Must be a @gmail.com address"
+                      placeholder="member@gmail.com"
                       value={m.email}
                       onChange={(e) =>
                         setMembers(members.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))
                       }
                     />
+                    {validateEmail(m.email) && (
+                      <p className="mt-1 font-mono text-[10px] text-red-400">{validateEmail(m.email)}</p>
+                    )}
                   </div>
                   <div>
                     <label className="label text-[11px]">Mobile number</label>
                     <input
-                      className="input"
-                      placeholder="+94 XXX XXX XXXX"
+                      className={`input ${
+                        validatePhone(m.phone) ? "border-red-500/70 focus:border-red-500" : ""
+                      }`}
+                      type="tel"
+                      placeholder="+94 XXX XXX XXX"
                       required
+                      maxLength={13}
                       value={m.phone}
-                      onChange={(e) =>
-                        setMembers(members.map((x, j) => (j === i ? { ...x, phone: e.target.value } : x)))
-                      }
+                      onChange={(e) => {
+                        // Always keep +94 prefix, only allow digits after it
+                        let raw = e.target.value;
+                        // Ensure it starts with +94
+                        if (!raw.startsWith("+94")) {
+                          raw = "+94" + raw.replace(/^\+?9?4?/, "").replace(/\D/g, "");
+                        }
+                        // Only keep +94 + up to 9 digits
+                        const prefix = "+94";
+                        const digits = raw.slice(prefix.length).replace(/\D/g, "").slice(0, 9);
+                        setMembers(members.map((x, j) => (j === i ? { ...x, phone: prefix + digits } : x)));
+                      }}
                     />
+                    {validatePhone(m.phone) && (
+                      <p className="mt-1 font-mono text-[10px] text-red-400">{validatePhone(m.phone)}</p>
+                    )}
                   </div>
                   <div>
                     <label className="label text-[11px]">IM Number</label>
                     <input
-                      className="input"
-                      placeholder="IM_NUMBER"
+                      className={`input ${
+                        validateIm(m.im_number) ? "border-red-500/70 focus:border-red-500" : ""
+                      }`}
+                      placeholder="IM/0000/000"
                       required
+                      maxLength={11}
+                      pattern="^IM\/\d{4}\/\d{3}$"
+                      title="Format: IM/0000/000 (e.g. IM/2024/123)"
                       value={m.im_number}
                       onChange={(e) =>
                         setMembers(members.map((x, j) => (j === i ? { ...x, im_number: e.target.value } : x)))
                       }
                     />
+                    {validateIm(m.im_number) && (
+                      <p className="mt-1 font-mono text-[10px] text-red-400">{validateIm(m.im_number)}</p>
+                    )}
                   </div>
                 </div>
-                {members.length > 1 && (
-                  <button
-                    type="button"
-                    className="absolute right-3 top-3 font-mono text-xs text-zinc-600 hover:text-red-400"
-                    onClick={() => setMembers(members.filter((_, j) => j !== i))}
-                    aria-label="Remove member"
-                  >
-                    ✕ remove
-                  </button>
-                )}
               </div>
             ))}
           </div>

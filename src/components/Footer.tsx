@@ -32,11 +32,7 @@ export default function Footer() {
                 Terms of Engagement
               </Link>
             </li>
-            <li>
-              <Link className="hover:text-ember-400" href="/bracket">
-                Bracket
-              </Link>
-            </li>
+
             <li>
               <Link className="hover:text-ember-400" href="/leaderboard">
                 Leaderboard

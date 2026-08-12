@@ -93,7 +93,7 @@ function getOtpEmailHtml(name: string, otp: string): string {
             <!-- Header / Logo -->
             <tr>
               <td align="center" style="background-color:#000000; padding: 36px 24px;" class="px-24">
-                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/logo.png" alt="CODFEST Logo" width="160" class="fluid" style="display:block; width:160px; max-width:60%; height:auto; margin:0 auto;">
+                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@latest/public/logo.png" alt="CODFEST Logo" width="160" class="fluid" style="display:block; width:160px; max-width:60%; height:auto; margin:0 auto;">
               </td>
             </tr>
 
@@ -167,7 +167,7 @@ function getOtpEmailHtml(name: string, otp: string): string {
                       <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/imssa-logo.png" alt="IMSSA Logo" height="42" style="display:block; height:42px; width:auto;">
                     </td>
                     <td style="padding: 0 14px;">
-                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT-IT Logo" height="42" style="display:block; height:42px; width:auto;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT/IT Logo" height="42" style="display:block; height:42px; width:auto;">
                     </td>
                     <td style="padding: 0 14px;">
                       <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/uok-crest.png" alt="University of Kelaniya Crest" height="42" style="display:block; height:42px; width:auto;">
@@ -180,10 +180,10 @@ function getOtpEmailHtml(name: string, otp: string): string {
             <tr>
               <td align="center" class="px-24" style="padding: 4px 40px 36px 40px;">
                 <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  Organized by IMSSA &amp; MIT-IT, Faculty of Commerce and Management Studies
+                  Organized by the Industrial Management Science Students Association
                 </p>
                 <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  University of Kelaniya &middot; <a href="https://codfestmit.vercel.app/" style="color:#000000; text-decoration:underline;">codfestmit.vercel.app</a>
+                  University of Kelaniya &middot; <a href="https://codfest.imssa.lk/" style="color:#000000; text-decoration:underline;">codfest.imssa.lk/</a>
                 </p>
               </td>
             </tr>
@@ -267,7 +267,7 @@ function getWelcomeEmailHtml({
             <!-- Header / Logo -->
             <tr>
               <td align="center" style="background-color:#000000; padding: 36px 24px;" class="px-24">
-                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/logo.png" alt="CODFEST Logo" width="170" class="fluid" style="display:block; width:170px; max-width:60%; height:auto; margin:0 auto;">
+                <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@latest/public/logo.png" alt="CODFEST Logo" width="170" class="fluid" style="display:block; width:170px; max-width:60%; height:auto; margin:0 auto;">
               </td>
             </tr>
 
@@ -329,7 +329,7 @@ function getWelcomeEmailHtml({
                 <table role="presentation" cellpadding="0" cellspacing="0" align="center">
                   <tr>
                     <td align="center" class="btn" style="background-color:#000000; border-radius:8px;">
-                      <a href="https://codfestmit.vercel.app/" target="_blank" style="display:inline-block; padding:15px 36px; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:700; color:#8cfd30; text-decoration:none; border-radius:8px;">
+                      <a href="https://codfest.imssa.lk/" target="_blank" style="display:inline-block; padding:15px 36px; font-family:'Poppins', Arial, sans-serif; font-size:15px; font-weight:700; color:#8cfd30; text-decoration:none; border-radius:8px;">
                         View Event Details
                       </a>
                     </td>
@@ -374,7 +374,7 @@ function getWelcomeEmailHtml({
                       <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/imssa-logo.png" alt="IMSSA Logo" height="42" style="display:block; height:42px; width:auto;">
                     </td>
                     <td style="padding: 0 14px;">
-                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT-IT Logo" height="42" style="display:block; height:42px; width:auto;">
+                      <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/mit-it-logo.png" alt="MIT/IT Logo" height="42" style="display:block; height:42px; width:auto;">
                     </td>
                     <td style="padding: 0 14px;">
                       <img src="https://cdn.jsdelivr.net/gh/PrakashLeena/CODFEST@main/public/uok-crest.png" alt="University of Kelaniya Crest" height="42" style="display:block; height:42px; width:auto;">
@@ -387,10 +387,10 @@ function getWelcomeEmailHtml({
             <tr>
               <td align="center" class="px-24" style="padding: 4px 40px 36px 40px;">
                 <p style="margin:0 0 6px 0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  Organized by IMSSA &amp; MIT-IT, Faculty of Commerce and Management Studies
+                  Organized by the Industrial Management Science Students Association
                 </p>
                 <p style="margin:0; font-family:'Poppins', Arial, sans-serif; font-size:12px; color:#8b9a7a;">
-                  University of Kelaniya &middot; <a href="https://codfestmit.vercel.app/" style="color:#000000; text-decoration:underline;">codfestmit.vercel.app</a>
+                  University of Kelaniya &middot; <a href="https://codfest.imssa.lk/" style="color:#000000; text-decoration:underline;">codfest.imssa.lk/</a>
                 </p>
               </td>
             </tr>

@@ -12,7 +12,7 @@ export default function TeamProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/teams/${id}`)
+    fetch(`/api/teams/${id}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((j) => (j.error ? setError(j.error) : setData(j)));
   }, [id]);
