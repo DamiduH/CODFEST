@@ -63,16 +63,7 @@ export default function Footer() {
             Organized By
           </h4>
           <div className="mt-4 flex flex-wrap items-center gap-4">
-            <div className="flex items-center justify-center rounded border border-night-700 bg-night-900/60 p-2 transition hover:border-zinc-500 hover:bg-night-800">
-              <Image
-                src="/uok-crest.png"
-                alt="University of Kelaniya Crest"
-                width={120}
-                height={120}
-                className="h-10 w-auto object-contain opacity-80 hover:opacity-100"
-              />
-            </div>
-            <div className="flex items-center justify-center rounded border border-night-700 bg-night-900/60 p-2 transition hover:border-zinc-500 hover:bg-night-800">
+            <div className="flex items-center justify-center p-2">
               <Image
                 src="/mit-it-logo.png"
                 alt="MIT-IT Logo"
@@ -81,10 +72,19 @@ export default function Footer() {
                 className="h-10 w-auto object-contain opacity-80 hover:opacity-100"
               />
             </div>
-            <div className="flex items-center justify-center rounded border border-night-700 bg-night-900/60 p-2 transition hover:border-zinc-500 hover:bg-night-800">
+            <div className="flex items-center justify-center p-2">
               <Image
                 src="/imssa-logo.png"
                 alt="IMSSA Logo"
+                width={120}
+                height={120}
+                className="h-10 w-auto object-contain opacity-80 hover:opacity-100"
+              />
+            </div>
+            <div className="flex items-center justify-center p-2">
+              <Image
+                src="/uok-crest.png"
+                alt="University of Kelaniya Crest"
                 width={120}
                 height={120}
                 className="h-10 w-auto object-contain opacity-80 hover:opacity-100"
@@ -101,4 +101,3 @@ export default function Footer() {
     </footer>
   );
 }
-
