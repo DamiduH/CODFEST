@@ -20,6 +20,13 @@ function validatePhone(v: string): string {
   return "";
 }
 
+/** Validates Gmail address */
+function validateEmail(v: string): string {
+  if (!v) return "";
+  if (!v.toLowerCase().endsWith("@gmail.com")) return "Must be a @gmail.com address";
+  return "";
+}
+
 /** Validates IM number: IM/YYYY/NNN */
 function validateIm(v: string): string {
   if (!v) return "";
@@ -498,13 +505,20 @@ export default function RegisterPage() {
           <div>
             <label className="label">Leader&apos;s email</label>
             <input
-              className="input"
-              placeholder="LEADER@DOMAIN"
+              className={`input ${
+                validateEmail(emailInput) ? "border-red-500/70 focus:border-red-500" : ""
+              }`}
+              placeholder="leader@gmail.com"
               type="email"
               required
+              pattern="^[a-zA-Z0-9._%+\-]+@gmail\.com$"
+              title="Must be a @gmail.com address"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
             />
+            {validateEmail(emailInput) && (
+              <p className="mt-1 font-mono text-[10px] text-red-400">{validateEmail(emailInput)}</p>
+            )}
           </div>
           <button className="btn-primary w-full" disabled={checkingEmail}>
             {checkingEmail ? "Checking…" : "Continue →"}
@@ -762,15 +776,22 @@ export default function RegisterPage() {
                   <div>
                     <label className="label text-[11px]">Email address</label>
                     <input
-                      className="input"
+                      className={`input ${
+                        validateEmail(m.email) ? "border-red-500/70 focus:border-red-500" : ""
+                      }`}
                       type="email"
                       required
-                      placeholder="member@domain"
+                      pattern="^[a-zA-Z0-9._%+\-]+@gmail\.com$"
+                      title="Must be a @gmail.com address"
+                      placeholder="member@gmail.com"
                       value={m.email}
                       onChange={(e) =>
                         setMembers(members.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))
                       }
                     />
+                    {validateEmail(m.email) && (
+                      <p className="mt-1 font-mono text-[10px] text-red-400">{validateEmail(m.email)}</p>
+                    )}
                   </div>
                   <div>
                     <label className="label text-[11px]">Mobile number</label>
