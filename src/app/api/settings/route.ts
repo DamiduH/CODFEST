@@ -1,42 +1,36 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 
-/** GET /api/settings
- *  Returns global site settings. Public endpoint — no auth required.
+/**
+ * GET /api/settings
  *
- *  FAIL-CLOSED: if the table doesn't exist or the DB errors,
- *  we return live_score_visible: FALSE so the page stays hidden.
- *  This ensures the admin's OFF setting is never accidentally overridden.
+ * Reads system settings stored in the announcements table as a special
+ * "__SYSTEM_SETTINGS__" row (JSON in the `body` field).
+ * No extra migration or new table needed.
  */
 export async function GET() {
-  const { data, error } = await db()
-    .from("site_settings")
-    .select("key, value");
+  try {
+    const { data } = await db()
+      .from("announcements")
+      .select("id, body")
+      .eq("title", "__SYSTEM_SETTINGS__")
+      .maybeSingle();
 
-  if (error) {
-    // Table probably doesn't exist yet (migration not run).
-    // Fail CLOSED: hide the live score rather than accidentally showing it.
-    console.error("[settings] site_settings table error:", error.message);
-    return NextResponse.json({
-      settings: { live_score_visible: false },
-      _warning: "site_settings table missing — run the migration SQL in Supabase",
-    });
+    // Default: live score is visible until admin explicitly hides it.
+    const defaults: Record<string, unknown> = { live_score_visible: true };
+
+    if (data?.body) {
+      try {
+        const parsed = JSON.parse(data.body);
+        return NextResponse.json({ settings: { ...defaults, ...parsed } });
+      } catch {
+        // Body is malformed JSON — return defaults.
+      }
+    }
+
+    return NextResponse.json({ settings: defaults });
+  } catch (err: any) {
+    console.error("[settings GET]", err?.message);
+    return NextResponse.json({ settings: { live_score_visible: true } });
   }
-
-  // Convert rows into a plain object: { live_score_visible: true, ... }
-  const settings: Record<string, unknown> = {};
-  for (const row of data ?? []) {
-    // Coerce "true"/"false" strings to booleans.
-    if (row.value === "true") settings[row.key] = true;
-    else if (row.value === "false") settings[row.key] = false;
-    else settings[row.key] = row.value;
-  }
-
-  // If the table exists but has no row yet, default to TRUE (visible).
-  // Once the admin explicitly sets it to false, that value is persisted.
-  if (!("live_score_visible" in settings)) {
-    settings.live_score_visible = true;
-  }
-
-  return NextResponse.json({ settings });
 }

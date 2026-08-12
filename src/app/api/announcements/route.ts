@@ -11,6 +11,7 @@ export async function GET() {
   const { data } = await db()
     .from("announcements")
     .select("*")
+    .neq("title", "__SYSTEM_SETTINGS__")
     .order("created_at", { ascending: false })
     .limit(50);
   return NextResponse.json({ announcements: data ?? [] });
