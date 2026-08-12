@@ -22,8 +22,8 @@ const weaponClasses = [
 
 const bannedItems = [
   ["Weapons", "All LMGs (RPD, SAW, M60), P90, Skorpion, Barrett .50 Cal, Dragunov"],
-  ["Attachments", 'Grenade Launchers ("Noob Tubes"), Red Dot, ACOG, Silencers'],
-  ["Equipment", "Claymores, C4, RPGs, Stun Grenades"],
+  ["Attachments", 'Grenade Launchers ("noob tubes"), Red Dot, ACOG, Silencers'],
+  ["Equipment", "Claymores, C4, RPGs, Stun Grenades — max 1 Frag + 1 Flash/Smoke per player"],
 ];
 
 const mapPool = ["Crash", "Backlot", "Strike", "District", "Crossfire"];
@@ -39,14 +39,12 @@ const matchSettings: Record<Division, { chips: string[]; rows: string[][]; note?
       ["Killcam", "Disabled"],
       ["3rd Person Spectating", "Disabled"],
       ["Round Timer", "1:45"],
-      ["Bomb Fuse", "45s"],
-      ["Plant Time", "5s"],
-      ["Defuse Time", "7s"],
-      ["Perks & Killstreak Rewards", "Disabled"],
+      ["Bomb Fuse", "45s (Plant: 5s / Defuse: 7s)"],
+      ["Win Condition", "First to 7 rounds (half-time swap at 6 rounds)"],
     ],
   },
   girls: {
-    chips: ["TDM", "5v5", "15 Minutes", "100 Kills"],
+    chips: ["TDM", "5v5", "15 Minutes"],
     rows: [
       ["Mode", "Team Deathmatch (TDM)"],
       ["Platform / Mod", "CoD4 Promod LIVE / LAN"],
@@ -55,11 +53,9 @@ const matchSettings: Record<Division, { chips: string[]; rows: string[][]; note?
       ["Killcam", "Disabled"],
       ["3rd Person Spectating", "Disabled"],
       ["Match Length", "15 minutes"],
-      ["Score Limit", "100 kills"],
-      ["Win Condition", "Highest kill count at time or first to 100 kills"],
-      ["Tie-Breaker", "Sudden death — first kill wins, or event overtime ruling"],
+      ["Win Condition", "Highest kill count when time expires"],
+      ["Tie-Breaker", "Sudden death — first kill wins (or per-event overtime rule)"],
     ],
-    note: "The match ends early if a team reaches 100 kills before time expires.",
   },
 };
 
@@ -68,9 +64,7 @@ const tournamentStages: Record<Division, { title: string; rules: string[]; empha
     {
       title: "Initial Rounds & Group Stage — Best of 1",
       rules: [
-        "One map is played.",
-        "First team to win 7 rounds wins the match.",
-        "Half-time side swap occurs after 6 rounds.",
+        "Win condition: first to 7 rounds, single map.",
         "A coin toss takes place before the match.",
         "Coin Toss Winner: Chooses the map.",
         "Coin Toss Loser: Chooses the starting side (Attack / Defend).",
@@ -84,7 +78,6 @@ const tournamentStages: Record<Division, { title: string; rules: string[]; empha
         "Coin Toss Loser: Bans 1 map.",
         "The remaining 3 maps are played.",
         "Coin Toss Winner: Chooses the starting side for Map 1.",
-        "The team that wins 2 maps wins the Semi-Final.",
       ],
     },
     {
@@ -114,15 +107,15 @@ const tournamentStages: Record<Division, { title: string; rules: string[]; empha
         "Coin Toss Loser: Bans 1 map.",
         "The remaining 3 maps are played.",
         "Coin Toss Winner: Chooses the starting spawn side for Map 1.",
+        "Map 3 is played only if the series is tied 1–1 after the first two maps.",
       ],
     },
     {
-      title: "Grand Final — 3 Maps",
-      emphasis: "All 3 maps are played in full",
+      title: "Grand Finals (3 Maps, Cumulative Score)",
       rules: [
-        "All 3 maps are played in full.",
-        "Each map lasts 15 minutes unless the 100-kill score limit is reached first.",
-        "The winner is determined by the highest combined kill total across all 3 maps.",
+        "Win condition: The team with the highest kill total wins the map.",
+        "Map 3 is played only if the series is tied 1–1 after the first two maps.",
+        "Each map lasts 15 minutes.",
       ],
     },
   ],
@@ -130,26 +123,37 @@ const tournamentStages: Record<Division, { title: string; rules: string[]; empha
 
 const technicalRules: Record<Division, string[][]> = {
   boys: [
-    ["Disconnect Before First Blood", "Restart the round if the disconnect occurs within the first 30 seconds and no kills have occurred."],
-    ["Disconnect After First Blood", "Complete the current round. The disconnected player may rejoin the following round."],
-    ["Macros & Scripts", "Rapid-fire macros, scripts and scroll-wheel fire binds are strictly prohibited."],
+    ["Disconnect Before First Blood", "Round restarts (if under 30s, no kills)."],
+    ["Disconnect After First Blood", "Round plays out; player rejoins next round."],
+    ["Macros & Scripts", "Rapid-fire or scroll-wheel fire binds are strictly banned."],
   ],
   girls: [
-    ["Disconnect Within First 60 Seconds", "The match may be restarted if there is no significant score gap."],
-    ["Disconnect After 60 Seconds", "The match continues and the disconnected player may rejoin at any time."],
-    ["Macros & Scripts", "Rapid-fire macros, scripts and scroll-wheel fire binds are strictly prohibited."],
+    ["Disconnect Within First 60 Seconds", "Match restarts if no significant score gap."],
+    ["Disconnect After 60 Seconds", "Match plays out; player may rejoin at any time."],
+    ["Macros & Scripts", "Rapid-fire or scroll-wheel fire binds are strictly banned."],
   ],
 };
 
 const fairPlay: Record<Division, { prohibited: string[]; note?: string; penalties: string[] }> = {
   boys: {
-    prohibited: ["Elevator glitches", "Sky-walking", "Going out of bounds", "Defusing the bomb through solid walls or boxes", "Ghosting"],
-    note: "Ghosting Rule: Eliminated players may not call out enemy positions to teammates who are still alive.",
-    penalties: ["1 Round Forfeit", "Instant Match Disqualification"],
+    prohibited: [
+      "Elevator glitches",
+      "Sky-walking",
+      "Going out of bounds",
+      "Bomb defusing through solid walls/boxes",
+    ],
+    note: "Ghosting: Dead players cannot call out enemy positions to living teammates.",
+    penalties: ["1st Offense: Round forfeit", "2nd Offense: Instant match DQ"],
   },
   girls: {
-    prohibited: ["Elevator glitches", "Sky-walking", "Going out of bounds", "Spawn-camping / spawn-trapping abuse", "Ghosting", "Coordinating with spectators during a match"],
-    penalties: ["Warning + 5-kill score deduction", "Instant Match Disqualification"],
+    prohibited: [
+      "Elevator glitches",
+      "Sky-walking",
+      "Going out of bounds",
+      "Spawn-camping/spawn-trapping abuse (may result in warning or penalty at admin discretion)",
+      "Ghosting or coordinating with spectators is not allowed",
+    ],
+    penalties: ["1st Offense: Warning + score adjustment (5 kills deducted)", "2nd Offense: Instant match DQ"],
   },
 };
 
