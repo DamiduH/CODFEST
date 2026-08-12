@@ -13,8 +13,6 @@ const LINKS = [
   { href: "/matches", label: "Matches" },
   { href: "/bracket", label: "Bracket" },
   { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/scoreboard", label: "Killfeed" },
-  { href: "/live-server", label: "Live Server" },
   { href: "/rules", label: "Rules" },
   { href: "/contact", label: "Contact" },
 ];
@@ -43,6 +41,7 @@ export default function Navbar() {
     ...(role === "admin" ? [
       { href: "/livescore", label: "Live Score", badge: "LIVE" },
       { href: "/scoreboard", label: "Killfeed", badge: "LIVE" },
+      { href: "/live-server", label: "Live Server", badge: "LIVE" },
       { href: "/admin", label: "Admin" }
     ] : []),
   ];
