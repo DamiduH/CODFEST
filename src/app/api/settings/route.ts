@@ -3,6 +3,7 @@ import { db } from "@/lib/supabase";
 
 /** GET /api/settings
  *  Returns global site settings. Public endpoint — no auth required.
+ *  Falls back to safe defaults if the site_settings table doesn't exist yet.
  */
 export async function GET() {
   const { data, error } = await db()
@@ -10,7 +11,13 @@ export async function GET() {
     .select("key, value");
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Table probably doesn't exist yet (migration not run).
+    // Log it and return safe defaults so the UI doesn't break.
+    console.error("[settings] site_settings table error:", error.message);
+    return NextResponse.json({
+      settings: { live_score_visible: true },
+      _warning: "site_settings table missing — run the migration SQL",
+    });
   }
 
   // Convert rows into a plain object: { live_score_visible: true, ... }
@@ -20,6 +27,11 @@ export async function GET() {
     if (row.value === "true") settings[row.key] = true;
     else if (row.value === "false") settings[row.key] = false;
     else settings[row.key] = row.value;
+  }
+
+  // If table exists but has no row yet, seed the default.
+  if (!("live_score_visible" in settings)) {
+    settings.live_score_visible = true;
   }
 
   return NextResponse.json({ settings });

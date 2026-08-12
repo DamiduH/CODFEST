@@ -26,7 +26,16 @@ export async function PATCH(req: Request) {
     .upsert({ key, value: stringValue }, { onConflict: "key" });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[admin/settings] upsert error:", error.message);
+    // Return a descriptive error so the admin toggle shows it
+    return NextResponse.json(
+      {
+        error: error.message.includes("does not exist")
+          ? "site_settings table not found — please run the migration SQL in Supabase first."
+          : error.message,
+      },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ ok: true, key, value: stringValue });

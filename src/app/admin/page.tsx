@@ -257,14 +257,15 @@ function LiveScorePanel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: "live_score_visible", value: next }),
     });
+    const json = await res.json();
     setToggleBusy(false);
     if (res.ok) {
       setLiveScoreVisible(next);
       setToggleMsg(next ? "✓ Live Score page is now VISIBLE to everyone." : "✓ Live Score page is now HIDDEN from the public.");
     } else {
-      setToggleMsg("Failed to update setting.");
+      setToggleMsg(`✗ ${json.error ?? "Failed to update setting."}`);
     }
-    setTimeout(() => setToggleMsg(null), 4000);
+    setTimeout(() => setToggleMsg(null), 6000);
   }
 
   const load = useCallback(() => {
