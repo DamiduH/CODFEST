@@ -13,13 +13,10 @@ interface MemberRow {
 
 const emptyMember = (): MemberRow => ({ member_name: "", email: "", phone: "", im_number: "" });
 
-/** Validates Sri Lanka mobile: +94 followed by 9 digits (spaces allowed) */
+/** Validates Sri Lanka mobile: +94 followed by 9 digits */
 function validatePhone(v: string): string {
   if (!v) return "";
-  // Strip spaces then check format
-  const stripped = v.replace(/\s/g, "");
-  if (/[^\d\+]/.test(stripped)) return "Only digits and + allowed";
-  if (!/^\+94\d{9}$/.test(stripped)) return "Format: +94 XXX XXX XXX (9 digits after +94)";
+  if (!/^\+94\d{9}$/.test(v)) return "Format: +94 XXX XXX XXX (9 digits after +94)";
   return "";
 }
 
@@ -764,10 +761,20 @@ export default function RegisterPage() {
                       type="tel"
                       placeholder="+94 XXX XXX XXX"
                       required
+                      maxLength={13}
                       value={m.phone}
-                      onChange={(e) =>
-                        setMembers(members.map((x, j) => (j === i ? { ...x, phone: e.target.value } : x)))
-                      }
+                      onChange={(e) => {
+                        // Always keep +94 prefix, only allow digits after it
+                        let raw = e.target.value;
+                        // Ensure it starts with +94
+                        if (!raw.startsWith("+94")) {
+                          raw = "+94" + raw.replace(/^\+?9?4?/, "").replace(/\D/g, "");
+                        }
+                        // Only keep +94 + up to 9 digits
+                        const prefix = "+94";
+                        const digits = raw.slice(prefix.length).replace(/\D/g, "").slice(0, 9);
+                        setMembers(members.map((x, j) => (j === i ? { ...x, phone: prefix + digits } : x)));
+                      }}
                     />
                     {validatePhone(m.phone) && (
                       <p className="mt-1 font-mono text-[10px] text-red-400">{validatePhone(m.phone)}</p>
@@ -781,6 +788,7 @@ export default function RegisterPage() {
                       }`}
                       placeholder="IM/0000/000"
                       required
+                      maxLength={11}
                       pattern="^IM\/\d{4}\/\d{3}$"
                       title="Format: IM/0000/000 (e.g. IM/2024/123)"
                       value={m.im_number}
