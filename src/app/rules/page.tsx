@@ -4,10 +4,10 @@ import { useState } from "react";
 
 const RULE_SECTIONS = [
   "Match Format & Server Settings",
-  "Weapons & Classes",
-  "Map Pool & Tournament Format",
+  "Weapon & Class Restrictions",
+  "Map Pool & Veto",
   "Technical & Disconnect Rules",
-  "Fair Play & Penalties",
+  "Glitches & Disqualification",
 ] as const;
 
 type RuleSection = (typeof RULE_SECTIONS)[number];
@@ -42,11 +42,11 @@ const matchSettings: Record<Division, { chips: string[]; rows: string[][]; note?
       ["Bomb Fuse", "45s"],
       ["Plant Time", "5s"],
       ["Defuse Time", "7s"],
-      ["Perks & Killstreak Rewards", "Disabled"],
+      ["Win Condition", "First to 7 rounds; half-time swap after 6 rounds"],
     ],
   },
   girls: {
-    chips: ["TDM", "5v5", "15 Minutes", "100 Kills"],
+    chips: ["TDM", "5v5", "15 MIN", "Highest Kills"],
     rows: [
       ["Mode", "Team Deathmatch (TDM)"],
       ["Platform / Mod", "CoD4 Promod LIVE / LAN"],
@@ -55,11 +55,9 @@ const matchSettings: Record<Division, { chips: string[]; rows: string[][]; note?
       ["Killcam", "Disabled"],
       ["3rd Person Spectating", "Disabled"],
       ["Match Length", "15 minutes"],
-      ["Score Limit", "100 kills"],
-      ["Win Condition", "Highest kill count at time or first to 100 kills"],
+      ["Win Condition", "Highest kill count when time expires"],
       ["Tie-Breaker", "Sudden death — first kill wins, or event overtime ruling"],
     ],
-    note: "The match ends early if a team reaches 100 kills before time expires.",
   },
 };
 
@@ -67,6 +65,7 @@ const tournamentStages: Record<Division, { title: string; rules: string[]; empha
   boys: [
     {
       title: "Initial Rounds & Group Stage — Best of 1",
+      emphasis: "First to 7 rounds",
       rules: [
         "One map is played.",
         "First team to win 7 rounds wins the match.",
@@ -82,13 +81,14 @@ const tournamentStages: Record<Division, { title: string; rules: string[]; empha
         "A coin toss takes place before the map veto.",
         "Coin Toss Winner: Bans 1 map.",
         "Coin Toss Loser: Bans 1 map.",
-        "The remaining 3 maps are played.",
+        "The remaining 3 maps form the available series maps.",
         "Coin Toss Winner: Chooses the starting side for Map 1.",
         "The team that wins 2 maps wins the Semi-Final.",
       ],
     },
     {
       title: "Grand Finals — Best of 3 Maps",
+      emphasis: "First to 13 rounds per map",
       rules: [
         "Each map is played until one team reaches 13 round wins.",
         "The team that reaches 13 rounds first wins that map.",
@@ -112,17 +112,19 @@ const tournamentStages: Record<Division, { title: string; rules: string[]; empha
         "A coin toss takes place before the map veto.",
         "Coin Toss Winner: Bans 1 map.",
         "Coin Toss Loser: Bans 1 map.",
-        "The remaining 3 maps are played.",
+        "The remaining 3 maps form the available series maps.",
         "Coin Toss Winner: Chooses the starting spawn side for Map 1.",
+        "Map 3 is played only if the series is tied 1–1 after the first two maps.",
       ],
     },
     {
-      title: "Grand Final — 3 Maps",
-      emphasis: "All 3 maps are played in full",
+      title: "Grand Finals — Best of 3 Maps",
+      emphasis: "First to 2 map wins",
       rules: [
-        "All 3 maps are played in full.",
-        "Each map lasts 15 minutes unless the 100-kill score limit is reached first.",
-        "The winner is determined by the highest combined kill total across all 3 maps.",
+        "Each map lasts 15 minutes.",
+        "The team with the highest kill total at the end of the map wins that map.",
+        "The first team to win 2 maps wins the Grand Final.",
+        "Map 3 is played only if the series is tied 1–1 after the first two maps.",
       ],
     },
   ],
@@ -135,7 +137,7 @@ const technicalRules: Record<Division, string[][]> = {
     ["Macros & Scripts", "Rapid-fire macros, scripts and scroll-wheel fire binds are strictly prohibited."],
   ],
   girls: [
-    ["Disconnect Within First 60 Seconds", "The match may be restarted if there is no significant score gap."],
+    ["Disconnect Within First 60 Seconds", "The match restarts if there is no significant score gap."],
     ["Disconnect After 60 Seconds", "The match continues and the disconnected player may rejoin at any time."],
     ["Macros & Scripts", "Rapid-fire macros, scripts and scroll-wheel fire binds are strictly prohibited."],
   ],
@@ -145,10 +147,11 @@ const fairPlay: Record<Division, { prohibited: string[]; note?: string; penaltie
   boys: {
     prohibited: ["Elevator glitches", "Sky-walking", "Going out of bounds", "Defusing the bomb through solid walls or boxes", "Ghosting"],
     note: "Ghosting Rule: Eliminated players may not call out enemy positions to teammates who are still alive.",
-    penalties: ["1 Round Forfeit", "Instant Match Disqualification"],
+    penalties: ["Round Forfeit", "Instant Match Disqualification"],
   },
   girls: {
     prohibited: ["Elevator glitches", "Sky-walking", "Going out of bounds", "Spawn-camping / spawn-trapping abuse", "Ghosting", "Coordinating with spectators during a match"],
+    note: "Spawn-camping or spawn-trapping abuse may result in a warning or penalty at admin discretion.",
     penalties: ["Warning + 5-kill score deduction", "Instant Match Disqualification"],
   },
 };
@@ -271,7 +274,7 @@ export default function RulesPage() {
                           </dl>
                           <div className="mt-4 grid gap-2 border-t border-ember-600/20 pt-3 text-sm text-zinc-300 sm:grid-cols-2">
                             <p><strong className="text-ember-400">Equipment Limit:</strong> 1 Frag + 1 Flash/Smoke per player</p>
-                            {division === "girls" && <p><strong className="text-ember-400">Perks & Killstreak Rewards:</strong> Disabled</p>}
+                            <p><strong className="text-ember-400">Perks & Killstreak Rewards:</strong> Disabled</p>
                           </div>
                         </div>
                       </div>
@@ -301,7 +304,7 @@ export default function RulesPage() {
                     {section === RULE_SECTIONS[4] && (
                       <div className="space-y-5">
                         <div><h3 className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Prohibited</h3><RuleList items={fairPlay[division].prohibited} /></div>
-                        {fairPlay[division].note && <p className="border-l-2 border-ember-600 px-3 py-2 text-sm leading-relaxed text-zinc-400"><strong className="text-zinc-200">Ghosting Rule:</strong> {fairPlay[division].note.replace("Ghosting Rule: ", "")}</p>}
+                        {fairPlay[division].note && <p className="border-l-2 border-ember-600 px-3 py-2 text-sm leading-relaxed text-zinc-400">{fairPlay[division].note}</p>}
                         <div className="grid gap-2 sm:grid-cols-2">
                           {fairPlay[division].penalties.map((penalty, penaltyIndex) => <div key={penalty} className={`border border-ember-600 p-3 ${penaltyIndex ? "bg-ember-600/10" : "bg-ember-600/5"}`}><span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ember-400">{penaltyIndex + 1}{penaltyIndex === 0 ? "st" : "nd"} Offense</span><strong className="mt-1 block font-display text-lg uppercase text-white">{penalty}</strong></div>)}
                         </div>
