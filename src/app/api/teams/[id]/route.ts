@@ -5,6 +5,9 @@ import { currentUser } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { MATCH_SELECT } from "@/lib/standings";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /** Public team profile: roster, stats and match history. Contact PII is stripped for non-owners. */
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const { data: team } = await db()
@@ -32,7 +35,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       .order("round"),
   ]);
 
-  return NextResponse.json({ team, players: players ?? [], matches: matches ?? [] });
+  const headers = { "Cache-Control": "no-store, max-age=0" };
+  return NextResponse.json({ team, players: players ?? [], matches: matches ?? [] }, { headers });
 }
 
 const playerEditSchema = z.object({
